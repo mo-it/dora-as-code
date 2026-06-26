@@ -1,0 +1,57 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  annotations:
+    dora.article: 9(4)(b)
+    dora.requirement: Least-privilege access control
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"templates.gatekeeper.sh/v1","kind":"ConstraintTemplate","metadata":{"annotations":{"dora.article":"9(4)(b)","dora.requirement":"Least-privilege access control"},"name":"dorawildcardrbac"},"spec":{"crd":{"spec":{"names":{"kind":"DoraWildcardRbac"}}},"targets":[{"rego":"package dorawildcardrbac\n\n# This is Rego — a declarative query language.\n# 'violation' is a special rule: if it produces results,\n# the admission request is denied.\n\n# Read it as: \"There IS a violation IF any rule in the\n# ClusterRole has '*' in its resources list\"\nviolation[{\"msg\": msg}] {\n  # input.review.object is the ClusterRole being created/updated\n  rule := input.review.object.rules[_]\n  rule.resources[_] == \"*\"\n  msg := sprintf(\n    \"DORA Art. 9(4)(b) violation: ClusterRole '%s' uses wildcard (*) resource permissions. Least-privilege access requires explicit resource names.\",\n    [input.review.object.metadata.name]\n  )\n}\n","target":"admission.k8s.gatekeeper.sh"}]}}
+  creationTimestamp: "2026-06-22T13:10:35Z"
+  generation: 1
+  name: dorawildcardrbac
+  resourceVersion: "1357"
+  uid: d2f581a3-8bca-467b-a850-47c4f0d77b10
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraWildcardRbac
+      validation:
+        legacySchema: false
+  targets:
+  - rego: |
+      package dorawildcardrbac
+
+      # This is Rego — a declarative query language.
+      # 'violation' is a special rule: if it produces results,
+      # the admission request is denied.
+
+      # Read it as: "There IS a violation IF any rule in the
+      # ClusterRole has '*' in its resources list"
+      violation[{"msg": msg}] {
+        # input.review.object is the ClusterRole being created/updated
+        rule := input.review.object.rules[_]
+        rule.resources[_] == "*"
+        msg := sprintf(
+          "DORA Art. 9(4)(b) violation: ClusterRole '%s' uses wildcard (*) resource permissions. Least-privilege access requires explicit resource names.",
+          [input.review.object.metadata.name]
+        )
+      }
+    target: admission.k8s.gatekeeper.sh
+status:
+  byPod:
+  - id: gatekeeper-audit-7b4b566589-7nx87
+    observedGeneration: 1
+    operations:
+    - audit
+    - generate
+    - mutation-status
+    - status
+    templateUID: d2f581a3-8bca-467b-a850-47c4f0d77b10
+  - id: gatekeeper-controller-manager-ccc9ff94f-r5vf5
+    observedGeneration: 1
+    operations:
+    - mutation-webhook
+    - webhook
+    templateUID: d2f581a3-8bca-467b-a850-47c4f0d77b10
+  created: true

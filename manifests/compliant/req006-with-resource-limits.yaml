@@ -1,0 +1,38 @@
+# TEST MANIFEST: Should be ACCEPTED by both engines
+# Targets: REQ-006 (DORA Art. 11(1) — resilience and continuity)
+# Expected result: ALLOWED
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req006-compliant
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-006"
+    dora.expected-result: "allowed"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: test-with-limits
+  template:
+    metadata:
+      labels:
+        app: test-with-limits
+    spec:
+      containers:
+        - name: limited-container
+          image: nginx:1.27
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

@@ -1,0 +1,25 @@
+# TEST MANIFEST: Should be BLOCKED by both engines
+# Targets: REQ-010 (DORA Art. 9(4)(a) — restrict runtime privileges)
+# Expected result: DENIED
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req010-violation
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-010"
+    dora.expected-result: "denied"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-violation
+  template:
+    metadata:
+      labels:
+        app: test-violation
+    spec:
+      containers:
+        - name: bad-container
+          image: nginx:1.27
+          # VIOLATION: No securityContext, runs as root by default

@@ -1,0 +1,15 @@
+# TEST MANIFEST: Should be BLOCKED by both engines
+# Targets: REQ-003 (DORA Art. 9(4)(b) — least-privilege)
+# Expected result: DENIED
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-req003-violation
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-003"
+    dora.expected-result: "denied"
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]

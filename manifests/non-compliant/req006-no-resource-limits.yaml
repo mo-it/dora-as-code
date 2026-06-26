@@ -1,0 +1,26 @@
+# TEST MANIFEST: Should be BLOCKED by both engines
+# Targets: REQ-006 (DORA Art. 11(1) — resilience and continuity)
+# Expected result: DENIED
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req006-violation
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-006"
+    dora.expected-result: "denied"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-no-limits
+  template:
+    metadata:
+      labels:
+        app: test-no-limits
+    spec:
+      containers:
+        - name: unlimited-container
+          image: nginx:1.27
+          # VIOLATION: No resource requests/limits
+          # A single pod could consume all cluster resources

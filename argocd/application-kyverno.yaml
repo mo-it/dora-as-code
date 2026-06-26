@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dora-kyverno-policies
+  namespace: argocd
+spec:
+  project: default
+  source:
+    # UPDATE THIS when you push to GitHub:
+    # repoURL: https://github.com/YOUR_USERNAME/dora-as-code.git
+    repoURL: file:///home/mohit/dora-as-code
+    targetRevision: HEAD
+    path: policies/kyverno
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

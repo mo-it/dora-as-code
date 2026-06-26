@@ -1,0 +1,126 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraWildcardRbac
+metadata:
+  annotations:
+    dora.article: 9(4)(b)
+    dora.coverage: fully-automatable
+    dora.requirement: Least-privilege access control
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"constraints.gatekeeper.sh/v1beta1","kind":"DoraWildcardRbac","metadata":{"annotations":{"dora.article":"9(4)(b)","dora.coverage":"fully-automatable","dora.requirement":"Least-privilege access control"},"name":"dora-art9-block-wildcard-rbac"},"spec":{"enforcementAction":"deny","match":{"excludedNamespaces":["kube-system","kube-public","gatekeeper-system","kyverno","argocd"],"kinds":[{"apiGroups":["rbac.authorization.k8s.io"],"kinds":["ClusterRole"]}]}}}
+  creationTimestamp: "2026-06-22T13:10:45Z"
+  generation: 1
+  name: dora-art9-block-wildcard-rbac
+  resourceVersion: "171998"
+  uid: b4fc886b-4f86-41fc-b533-69cdc2906c0b
+spec:
+  enforcementAction: deny
+  match:
+    excludedNamespaces:
+    - kube-system
+    - kube-public
+    - gatekeeper-system
+    - kyverno
+    - argocd
+    kinds:
+    - apiGroups:
+      - rbac.authorization.k8s.io
+      kinds:
+      - ClusterRole
+status:
+  auditTimestamp: "2026-06-26T11:07:56Z"
+  byPod:
+  - constraintUID: b4fc886b-4f86-41fc-b533-69cdc2906c0b
+    enforced: true
+    enforcementPointsStatus:
+    - enforcementPoint: vap.k8s.io
+      message: K8sNativeValidation engine is missing
+      observedGeneration: 1
+      state: error
+    id: gatekeeper-audit-7b4b566589-7nx87
+    observedGeneration: 1
+    operations:
+    - audit
+    - generate
+    - mutation-status
+    - status
+  - constraintUID: b4fc886b-4f86-41fc-b533-69cdc2906c0b
+    enforced: true
+    id: gatekeeper-controller-manager-ccc9ff94f-r5vf5
+    observedGeneration: 1
+    operations:
+    - mutation-webhook
+    - webhook
+  totalViolations: 9
+  violations:
+  - enforcementAction: deny
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    message: 'DORA Art. 9(4)(b) violation: ClusterRole ''system:kube-controller-manager''
+      uses wildcard (*) resource permissions. Least-privilege access requires explicit
+      resource names.'
+    name: system:kube-controller-manager
+    version: v1
+  - enforcementAction: deny
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    message: 'DORA Art. 9(4)(b) violation: ClusterRole ''system:controller:resourcequota-controller''
+      uses wildcard (*) resource permissions. Least-privilege access requires explicit
+      resource names.'
+    name: system:controller:resourcequota-controller
+    version: v1
+  - enforcementAction: deny
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    message: 'DORA Art. 9(4)(b) violation: ClusterRole ''system:controller:namespace-controller''
+      uses wildcard (*) resource permissions. Least-privilege access requires explicit
+      resource names.'
+    name: system:controller:namespace-controller
+    version: v1
+  - enforcementAction: deny
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    message: 'DORA Art. 9(4)(b) violation: ClusterRole ''system:controller:horizontal-pod-autoscaler''
+      uses wildcard (*) resource permissions. Least-privilege access requires explicit
+      resource names.'
+    name: system:controller:horizontal-pod-autoscaler
+    version: v1
+  - enforcementAction: deny
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    message: 'DORA Art. 9(4)(b) violation: ClusterRole ''system:controller:generic-garbage-collector''
+      uses wildcard (*) resource permissions. Least-privilege access requires explicit
+      resource names.'
+    name: system:controller:generic-garbage-collector
+    version: v1
+  - enforcementAction: deny
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    message: 'DORA Art. 9(4)(b) violation: ClusterRole ''gatekeeper-manager-role''
+      uses wildcard (*) resource permissions. Least-privilege access requires explicit
+      resource names.'
+    name: gatekeeper-manager-role
+    version: v1
+  - enforcementAction: deny
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    message: 'DORA Art. 9(4)(b) violation: ClusterRole ''cluster-admin'' uses wildcard
+      (*) resource permissions. Least-privilege access requires explicit resource
+      names.'
+    name: cluster-admin
+    version: v1
+  - enforcementAction: deny
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    message: 'DORA Art. 9(4)(b) violation: ClusterRole ''argocd-server'' uses wildcard
+      (*) resource permissions. Least-privilege access requires explicit resource
+      names.'
+    name: argocd-server
+    version: v1
+  - enforcementAction: deny
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    message: 'DORA Art. 9(4)(b) violation: ClusterRole ''argocd-application-controller''
+      uses wildcard (*) resource permissions. Least-privilege access requires explicit
+      resource names.'
+    name: argocd-application-controller
+    version: v1
