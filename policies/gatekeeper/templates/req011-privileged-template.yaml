@@ -1,7 +1,7 @@
 apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
-  name: doraprivileged
+  name: dorablockprivileged
   annotations:
     dora.article: "9(4)(a)"
     dora.requirement: "REQ-011"
