@@ -1,0 +1,20 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraClusterAdmin
+metadata:
+  name: dora-art9-block-cluster-admin-binding
+  annotations:
+    dora.article: "9(4)(b)"
+    dora.requirement: "REQ-004"
+    dora.coverage: "fully-automatable"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: ["rbac.authorization.k8s.io"]
+        kinds: ["ClusterRoleBinding"]
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - gatekeeper-system
+      - kyverno
+      - argocd

@@ -1,0 +1,44 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art9-block-privileged
+  annotations:
+    dora.article: "9(4)(a)"
+    dora.requirement: "REQ-011"
+    dora.requirement-text: "Prevent container breakout - host isolation"
+    dora.coverage: "fully-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: block-privileged-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 9(4)(a) violation [REQ-011]: Privileged containers,
+          hostPID, hostNetwork, and hostIPC are blocked. These settings
+          allow container-to-host escape.
+        pattern:
+          spec:
+            =(hostPID): false
+            =(hostNetwork): false
+            =(hostIPC): false
+            containers:
+              - securityContext:
+                  =(privileged): false

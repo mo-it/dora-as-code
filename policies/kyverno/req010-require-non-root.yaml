@@ -1,0 +1,46 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art9-require-non-root
+  annotations:
+    dora.article: "9(4)(a)"
+    dora.requirement: "REQ-010"
+    dora.requirement-text: "Restrict container runtime privileges - non-root execution"
+    dora.coverage: "fully-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      # Exclude system namespaces — their pods legitimately need root
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 9(4)(a) violation [REQ-010]: All containers must set
+          securityContext.runAsNonRoot: true and
+          securityContext.capabilities.drop: ["ALL"].
+          Running as root creates privilege escalation risk.
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  runAsNonRoot: true
+                  capabilities:
+                    drop:
+                      - "ALL"

@@ -1,0 +1,28 @@
+# TEST: Should be BLOCKED — privileged: true + hostNetwork
+# Targets: REQ-011 (DORA Art. 9(4)(a))
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req011-violation
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-011"
+    dora.expected-result: "denied"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-req011-bad
+  template:
+    metadata:
+      labels:
+        app: test-req011-bad
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: privileged-container
+          image: nginx:1.27
+          securityContext:
+            privileged: true

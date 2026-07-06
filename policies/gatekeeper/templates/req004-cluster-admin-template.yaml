@@ -1,0 +1,26 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doraclusteradmin
+  annotations:
+    dora.article: "9(4)(b)"
+    dora.requirement: "REQ-004"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraClusterAdmin
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doraclusteradmin
+
+        violation[{"msg": msg}] {
+          input.review.object.roleRef.name == "cluster-admin"
+          subject := input.review.object.subjects[_]
+          subject.kind == "ServiceAccount"
+          msg := sprintf(
+            "DORA Art. 9(4)(b) violation [REQ-004]: ClusterRoleBinding '%s' grants cluster-admin to ServiceAccount '%s/%s'. Direct cluster-admin bindings create escalation risk.",
+            [input.review.object.metadata.name, subject.namespace, subject.name]
+          )
+        }

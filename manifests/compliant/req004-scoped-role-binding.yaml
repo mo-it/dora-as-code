@@ -1,0 +1,18 @@
+# TEST: Should be ALLOWED — uses a scoped role, not cluster-admin
+# Targets: REQ-004 (DORA Art. 9(4)(b))
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: test-req004-compliant
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-004"
+    dora.expected-result: "allowed"
+subjects:
+  - kind: ServiceAccount
+    name: test-sa
+    namespace: dora-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view

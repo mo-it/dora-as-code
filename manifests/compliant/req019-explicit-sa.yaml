@@ -1,0 +1,30 @@
+# TEST: Should be ALLOWED — uses explicit ServiceAccount
+# Targets: REQ-019 (DORA Art. 9(4)(c))
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req019-compliant
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-019"
+    dora.expected-result: "allowed"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-req019-good
+  template:
+    metadata:
+      labels:
+        app: test-req019-good
+    spec:
+      serviceAccountName: dora-test-sa
+      containers:
+        - name: explicit-sa-container
+          image: nginx:1.27
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop: ["ALL"]

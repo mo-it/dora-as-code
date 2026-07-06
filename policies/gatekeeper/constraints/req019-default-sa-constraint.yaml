@@ -1,0 +1,22 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraDefaultSA
+metadata:
+  name: dora-art9-restrict-default-sa
+  annotations:
+    dora.article: "9(4)(c)"
+    dora.requirement: "REQ-019"
+    dora.coverage: "partially-automatable"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - gatekeeper-system
+      - kyverno
+      - argocd

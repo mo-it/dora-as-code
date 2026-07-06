@@ -1,0 +1,26 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doradefaultsa
+  annotations:
+    dora.article: "9(4)(c)"
+    dora.requirement: "REQ-019"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraDefaultSA
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doradefaultsa
+
+        violation[{"msg": msg}] {
+          # Check if serviceAccountName is "default" or not set
+          sa := object.get(input.review.object.spec, "serviceAccountName", "default")
+          sa == "default"
+          msg := sprintf(
+            "DORA Art. 9(4)(c) violation [REQ-019]: %s '%s' uses the default ServiceAccount. Assign an explicit ServiceAccount with scoped RBAC.",
+            [input.review.object.kind, input.review.object.metadata.name]
+          )
+        }

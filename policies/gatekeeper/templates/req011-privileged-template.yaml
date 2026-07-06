@@ -1,0 +1,40 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doraprivileged
+  annotations:
+    dora.article: "9(4)(a)"
+    dora.requirement: "REQ-011"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraBlockPrivileged
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doraprivileged
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          container.securityContext.privileged == true
+          msg := sprintf(
+            "DORA Art. 9(4)(a) violation [REQ-011]: Container '%s' runs in privileged mode. Container-to-host escape risk.",
+            [container.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          input.review.object.spec.hostPID == true
+          msg := "DORA Art. 9(4)(a) violation [REQ-011]: hostPID is enabled. Process namespace sharing allows host process visibility."
+        }
+
+        violation[{"msg": msg}] {
+          input.review.object.spec.hostNetwork == true
+          msg := "DORA Art. 9(4)(a) violation [REQ-011]: hostNetwork is enabled. Host network access bypasses network segmentation."
+        }
+
+        violation[{"msg": msg}] {
+          input.review.object.spec.hostIPC == true
+          msg := "DORA Art. 9(4)(a) violation [REQ-011]: hostIPC is enabled. Shared IPC namespace allows inter-process communication with host."
+        }

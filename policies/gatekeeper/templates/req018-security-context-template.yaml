@@ -1,0 +1,50 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: dorasecuritycontext
+  annotations:
+    dora.article: "9(4)(a)"
+    dora.requirement: "REQ-018"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraSecurityContext
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package dorasecuritycontext
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.readOnlyRootFilesystem
+          msg := sprintf(
+            "DORA Art. 9(4)(a) violation [REQ-018]: Container '%s' must set readOnlyRootFilesystem: true.",
+            [container.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          container.securityContext.allowPrivilegeEscalation == true
+          msg := sprintf(
+            "DORA Art. 9(4)(a) violation [REQ-018]: Container '%s' must set allowPrivilegeEscalation: false.",
+            [container.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not has_valid_seccomp(container)
+          msg := sprintf(
+            "DORA Art. 9(4)(a) violation [REQ-018]: Container '%s' must have a seccomp profile (RuntimeDefault or Localhost).",
+            [container.name]
+          )
+        }
+
+        has_valid_seccomp(container) {
+          container.securityContext.seccompProfile.type == "RuntimeDefault"
+        }
+        has_valid_seccomp(container) {
+          container.securityContext.seccompProfile.type == "Localhost"
+        }

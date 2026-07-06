@@ -1,0 +1,28 @@
+# TEST: Should be BLOCKED — uses default ServiceAccount
+# Targets: REQ-019 (DORA Art. 9(4)(c))
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req019-violation
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-019"
+    dora.expected-result: "denied"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-req019-bad
+  template:
+    metadata:
+      labels:
+        app: test-req019-bad
+    spec:
+      # VIOLATION: no serviceAccountName specified — defaults to "default"
+      containers:
+        - name: default-sa-container
+          image: nginx:1.27
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000

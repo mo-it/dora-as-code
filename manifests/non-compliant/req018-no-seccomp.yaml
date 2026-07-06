@@ -1,0 +1,30 @@
+# TEST: Should be BLOCKED — writable root filesystem, no seccomp
+# Targets: REQ-018 (DORA Art. 9(4)(a))
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req018-violation
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-018"
+    dora.expected-result: "denied"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-req018-bad
+  template:
+    metadata:
+      labels:
+        app: test-req018-bad
+    spec:
+      containers:
+        - name: unhardened-container
+          image: nginx:1.27
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            # VIOLATION: readOnlyRootFilesystem not set (defaults to false)
+            # VIOLATION: no seccomp profile
+            # VIOLATION: allowPrivilegeEscalation not set (defaults to true)

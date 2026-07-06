@@ -1,0 +1,44 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art9-require-security-hardening
+  annotations:
+    dora.article: "9(4)(a)"
+    dora.requirement: "REQ-018"
+    dora.requirement-text: "Enforce security hardening on container filesystems"
+    dora.coverage: "fully-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-readonly-root-and-seccomp
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 9(4)(a) violation [REQ-018]: Containers must set
+          readOnlyRootFilesystem: true, allowPrivilegeEscalation: false,
+          and a seccomp profile (RuntimeDefault or Localhost).
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  readOnlyRootFilesystem: true
+                  allowPrivilegeEscalation: false
+                  seccompProfile:
+                    type: "RuntimeDefault | Localhost"
