@@ -3,10 +3,13 @@ kind: Application
 metadata:
   name: dora-gatekeeper-policies
   namespace: argocd
+  annotations:
+    # Wave 0: policies deploy FIRST
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   source:
-    # UPDATE THIS when you push to GitHub:
+    # UPDATE when pushed to GitHub:
     # repoURL: https://github.com/YOUR_USERNAME/dora-as-code.git
     repoURL: file:///home/mohit/dora-as-code
     targetRevision: HEAD
@@ -22,3 +25,10 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 1m
