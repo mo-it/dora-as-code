@@ -1,0 +1,47 @@
+# TEST: Should be BLOCKED — no change management annotations
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req015-violation
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-015"
+    dora.expected-result: "denied"
+    app: test-req015
+    dora.io/owner: "test"
+    dora.io/team: "test"
+    dora.io/criticality: "low"
+  annotations:
+    dora.io/description: "Test without change ticket"
+    dora.io/business-function: "testing"
+    dora.io/data-classification: "internal"
+    dora.io/asset-owner: "test"
+    dora.io/dependencies: "none"
+    dora.io/kernel-audit-enabled: "true"
+    dora.io/logging-configured: "true"
+    # VIOLATION: missing dora.io/change-id and dora.io/approved-by
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-req015
+  template:
+    metadata:
+      labels:
+        app: test-req015
+    spec:
+      serviceAccountName: dora-test-sa
+      containers:
+        - name: no-ticket
+          image: nginx:1.27
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 200m, memory: 256Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }

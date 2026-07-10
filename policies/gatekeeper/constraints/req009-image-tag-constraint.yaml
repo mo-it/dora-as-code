@@ -1,0 +1,22 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraImageTag
+metadata:
+  name: dora-art9-require-image-tag
+  annotations:
+    dora.article: "9(2)"
+    dora.requirement: "REQ-009"
+    dora.coverage: "fully-automatable"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - gatekeeper-system
+      - kyverno
+      - argocd

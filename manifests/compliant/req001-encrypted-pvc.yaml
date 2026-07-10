@@ -1,0 +1,20 @@
+# TEST: Should be ALLOWED — uses encrypted StorageClass with annotation
+# Targets: REQ-001 (DORA Art. 9(2))
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-req001-compliant
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-001"
+    dora.expected-result: "allowed"
+  annotations:
+    dora.io/encryption-at-rest: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: encrypted-gp3
+  resources:
+    requests:
+      storage: 1Gi

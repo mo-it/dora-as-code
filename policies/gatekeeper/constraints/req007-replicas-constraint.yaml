@@ -1,0 +1,22 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraReplicas
+metadata:
+  name: dora-art11-require-minimum-replicas
+  annotations:
+    dora.article: "11(1)"
+    dora.requirement: "REQ-007"
+    dora.coverage: "fully-automatable"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - gatekeeper-system
+      - kyverno
+      - argocd
+  parameters:
+    minReplicas: 2

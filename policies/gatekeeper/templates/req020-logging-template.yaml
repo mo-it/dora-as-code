@@ -1,0 +1,24 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doralogging
+  annotations:
+    dora.article: "10(3)"
+    dora.requirement: "REQ-020"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraLogging
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doralogging
+        violation[{"msg": msg}] {
+          annotations := object.get(input.review.object.metadata, "annotations", {})
+          not annotations["dora.io/logging-configured"]
+          msg := sprintf(
+            "DORA Art. 10(3) violation [REQ-020]: %s '%s' missing annotation dora.io/logging-configured: 'true'.",
+            [input.review.object.kind, input.review.object.metadata.name]
+          )
+        }

@@ -1,0 +1,35 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doraimagesignature
+  annotations:
+    dora.article: "15(1)"
+    dora.requirement: "REQ-022"
+    dora.expressiveness-note: >-
+      COVERAGE LIMITATION: Gatekeeper cannot natively verify cryptographic
+      image signatures. This template only checks for a signature annotation.
+      Real signature verification requires external tooling (Connaisseur, etc.).
+      Kyverno's native verifyImages is strictly more capable for this requirement.
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraImageSignature
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doraimagesignature
+
+        # NOTE: This is a WEAKER check than Kyverno's verifyImages.
+        # It only verifies that an annotation claims the image is signed,
+        # NOT that the image actually has a valid cryptographic signature.
+        # This limitation is documented as a coverage finding.
+
+        violation[{"msg": msg}] {
+          annotations := object.get(input.review.object.metadata, "annotations", {})
+          not annotations["dora.io/image-signature-verified"]
+          msg := sprintf(
+            "DORA Art. 15(1) violation [REQ-022]: %s '%s' missing annotation dora.io/image-signature-verified: 'true'. Note: Gatekeeper cannot natively verify image signatures — use external tooling.",
+            [input.review.object.kind, input.review.object.metadata.name]
+          )
+        }

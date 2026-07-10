@@ -1,0 +1,11 @@
+# TEST: Should be BLOCKED — namespace without ResourceQuota annotation
+# Targets: REQ-028 (DORA Art. 9(3)(b))
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test-req028-violation
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-028"
+    dora.expected-result: "denied"
+  # VIOLATION: no dora.io/resource-quota-configured annotation

@@ -1,0 +1,38 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art6-require-criticality
+  annotations:
+    dora.article: "6(1)(b)"
+    dora.requirement: "REQ-013"
+    dora.requirement-text: "Identify and classify ICT assets by criticality"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-criticality-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 6(1)(b) violation [REQ-013]: Workloads must have
+          label dora.io/criticality set to high, medium, or low.
+        pattern:
+          metadata:
+            labels:
+              dora.io/criticality: "high | medium | low"

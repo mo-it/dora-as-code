@@ -1,0 +1,24 @@
+# TEST: Should be BLOCKED — Ingress without TLS
+# Targets: REQ-002 (DORA Art. 9(2))
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-req002-violation
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-002"
+    dora.expected-result: "denied"
+spec:
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-service
+                port:
+                  number: 80
+  # VIOLATION: no spec.tls — plaintext HTTP

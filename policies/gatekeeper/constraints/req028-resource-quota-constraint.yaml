@@ -1,0 +1,22 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraResourceQuota
+metadata:
+  name: dora-art9-require-resource-quota
+  annotations:
+    dora.article: "9(3)(b)"
+    dora.requirement: "REQ-028"
+    dora.coverage: "fully-automatable"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Namespace"]
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - kube-node-lease
+      - default
+      - gatekeeper-system
+      - kyverno
+      - argocd

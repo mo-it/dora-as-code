@@ -1,0 +1,24 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraChangeAnnotation
+metadata:
+  name: dora-art13-require-change-annotation
+  annotations:
+    dora.article: "13(1)"
+    dora.requirement: "REQ-015"
+    dora.coverage: "partially-automatable"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - gatekeeper-system
+      - kyverno
+      - argocd
+  parameters:
+    requiredAnnotations:
+      - "dora.io/change-id"
+      - "dora.io/approved-by"

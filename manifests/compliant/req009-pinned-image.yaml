@@ -1,29 +1,28 @@
-# TEST: Should be BLOCKED — no resource requests or limits
-# Targets: REQ-006 (DORA Art. 11(1))
+# TEST: Should be ALLOWED — uses specific version tag
+# Targets: REQ-009 (DORA Art. 9(2))
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-req006-violation
+  name: test-req009-compliant
   namespace: dora-test
   labels:
     dora.test: "true"
-    dora.requirement: "REQ-006"
-    dora.expected-result: "denied"
+    dora.requirement: "REQ-009"
+    dora.expected-result: "allowed"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: test-req006-bad
+      app: test-req009-good
   template:
     metadata:
       labels:
-        app: test-req006-bad
+        app: test-req009-good
     spec:
       serviceAccountName: dora-test-sa
       containers:
-        - name: unlimited-container
-          image: nginx:1.27
-          # VIOLATION: no resources block at all
+        - name: pinned-container
+          image: nginx:1.27.0
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000

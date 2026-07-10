@@ -1,0 +1,23 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraEncryptedStorageclass
+metadata:
+  name: dora-art9-require-encrypted-storage
+  annotations:
+    dora.article: "9(2)"
+    dora.requirement: "REQ-001"
+    dora.coverage: "fully-automatable"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["PersistentVolumeClaim"]
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - gatekeeper-system
+      - kyverno
+      - argocd
+  parameters:
+    deniedStorageClasses:
+      - "local-path"

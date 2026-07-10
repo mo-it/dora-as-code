@@ -1,0 +1,49 @@
+# TEST: Should be BLOCKED — image from unknown registry
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req023b-violation
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-023b"
+    dora.expected-result: "denied"
+    app: test-req023b
+    dora.io/owner: "test"
+    dora.io/team: "test"
+    dora.io/criticality: "low"
+  annotations:
+    dora.io/description: "Test with unknown registry"
+    dora.io/business-function: "testing"
+    dora.io/data-classification: "internal"
+    dora.io/asset-owner: "test"
+    dora.io/dependencies: "none"
+    dora.io/kernel-audit-enabled: "true"
+    dora.io/logging-configured: "true"
+    dora.io/change-id: "CHG-TEST-001"
+    dora.io/approved-by: "test-approver"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-req023b
+  template:
+    metadata:
+      labels:
+        app: test-req023b
+    spec:
+      serviceAccountName: dora-test-sa
+      containers:
+        - name: unknown-registry
+          image: evil-registry.example.com/malware:latest
+          # VIOLATION: unknown registry + latest tag
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 200m, memory: 256Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }

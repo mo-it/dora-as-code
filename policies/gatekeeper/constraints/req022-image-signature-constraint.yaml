@@ -1,0 +1,22 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraImageSignature
+metadata:
+  name: dora-art15-verify-image-signature
+  annotations:
+    dora.article: "15(1)"
+    dora.requirement: "REQ-022"
+    dora.coverage: "fully-automatable"
+    dora.gatekeeper-limitation: "annotation-check-only; no cryptographic verification"
+spec:
+  # Audit mode to match Kyverno's Audit setting for this policy
+  enforcementAction: warn
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - gatekeeper-system
+      - kyverno
+      - argocd

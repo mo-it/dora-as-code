@@ -1,0 +1,33 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doralabels
+  annotations:
+    dora.article: "5(2)(a)"
+    dora.requirement: "REQ-012"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            requiredLabels:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doralabels
+        violation[{"msg": msg}] {
+          required := input.parameters.requiredLabels[_]
+          labels := input.review.object.metadata.labels
+          not labels[required]
+          msg := sprintf(
+            "DORA Art. 5(2)(a) violation [REQ-012]: %s '%s' missing required label '%s'.",
+            [input.review.object.kind, input.review.object.metadata.name, required]
+          )
+        }

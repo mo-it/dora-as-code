@@ -1,0 +1,32 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doradescription
+  annotations:
+    dora.article: "5(2)(d)"
+    dora.requirement: "REQ-025"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraDescription
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doradescription
+        violation[{"msg": msg}] {
+          annotations := object.get(input.review.object.metadata, "annotations", {})
+          not annotations["dora.io/description"]
+          msg := sprintf(
+            "DORA Art. 5(2)(d) violation [REQ-025]: %s '%s' missing annotation dora.io/description.",
+            [input.review.object.kind, input.review.object.metadata.name]
+          )
+        }
+        violation[{"msg": msg}] {
+          annotations := input.review.object.metadata.annotations
+          annotations["dora.io/description"] == ""
+          msg := sprintf(
+            "DORA Art. 5(2)(d) violation [REQ-025]: %s '%s' has empty dora.io/description.",
+            [input.review.object.kind, input.review.object.metadata.name]
+          )
+        }

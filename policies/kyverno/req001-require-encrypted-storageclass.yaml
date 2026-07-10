@@ -1,0 +1,41 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art9-require-encrypted-storage
+  annotations:
+    dora.article: "9(2)"
+    dora.requirement: "REQ-001"
+    dora.requirement-text: "Ensure confidentiality of data at rest"
+    dora.coverage: "fully-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-encrypted-storageclass
+      match:
+        any:
+          - resources:
+              kinds:
+                - PersistentVolumeClaim
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 9(2) violation [REQ-001]: PersistentVolumeClaims must
+          specify an encrypted StorageClass. The default 'local-path'
+          StorageClass does not provide encryption at rest. Use a
+          StorageClass with encryption enabled and add annotation
+          dora.io/encryption-at-rest: "true".
+        pattern:
+          metadata:
+            annotations:
+              dora.io/encryption-at-rest: "true"
+          spec:
+            storageClassName: "!local-path"

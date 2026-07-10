@@ -1,29 +1,36 @@
-# TEST: Should be BLOCKED — no resource requests or limits
-# Targets: REQ-006 (DORA Art. 11(1))
+# TEST: Should be BLOCKED — critical workload with only 1 replica
+# Targets: REQ-007 (DORA Art. 11(1))
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-req006-violation
+  name: test-req007-violation
   namespace: dora-test
   labels:
     dora.test: "true"
-    dora.requirement: "REQ-006"
+    dora.requirement: "REQ-007"
     dora.expected-result: "denied"
+    dora.io/criticality: "high"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: test-req006-bad
+      app: test-req007-bad
   template:
     metadata:
       labels:
-        app: test-req006-bad
+        app: test-req007-bad
     spec:
       serviceAccountName: dora-test-sa
       containers:
-        - name: unlimited-container
+        - name: single-replica
           image: nginx:1.27
-          # VIOLATION: no resources block at all
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000

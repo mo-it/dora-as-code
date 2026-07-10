@@ -1,0 +1,69 @@
+# TEST: GOLD STANDARD — satisfies ALL 25 enforceable DORA policies
+# This is the positive control for Phase 4 validation.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-fully-compliant
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.expected-result: "allowed"
+    app: dora-compliant-app
+    dora.io/owner: "mohit-kumar"
+    dora.io/team: "platform-engineering"
+    dora.io/criticality: "low"
+  annotations:
+    # REQ-005: Kernel audit
+    dora.io/kernel-audit-enabled: "true"
+    # REQ-015: Change management
+    dora.io/change-id: "CHG-2026-001"
+    dora.io/approved-by: "mark-lynch"
+    # REQ-017: Asset metadata
+    dora.io/business-function: "compliance-testing"
+    dora.io/data-classification: "internal"
+    dora.io/asset-owner: "mohit-kumar"
+    # REQ-020: Logging
+    dora.io/logging-configured: "true"
+    # REQ-022: Image signature (Gatekeeper fallback)
+    dora.io/image-signature-verified: "true"
+    # REQ-025: Description
+    dora.io/description: "Gold-standard fully compliant DORA test workload"
+    # REQ-027: Dependencies
+    dora.io/dependencies: "none"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dora-compliant-app
+  template:
+    metadata:
+      labels:
+        app: dora-compliant-app
+    spec:
+      # REQ-019: Explicit ServiceAccount
+      serviceAccountName: dora-test-sa
+      containers:
+        - name: compliant-container
+          # REQ-009: Pinned image tag (not :latest)
+          image: nginx:1.27
+          # REQ-006: Resource requests AND limits
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          securityContext:
+            # REQ-010: Non-root + drop capabilities
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop: ["ALL"]
+            # REQ-011: Not privileged
+            privileged: false
+            # REQ-018: Filesystem hardening + seccomp
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault

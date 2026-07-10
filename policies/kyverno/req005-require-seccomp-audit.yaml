@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art10-require-kernel-audit
+  annotations:
+    dora.article: "10(1)"
+    dora.requirement: "REQ-005"
+    dora.requirement-text: "Enable kernel-level security auditing on containers"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-kernel-audit-annotation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 10(1) violation [REQ-005]: Workloads must have
+          kernel-level audit configured. Add annotation
+          dora.io/kernel-audit-enabled: "true" after verifying
+          AppArmor/seccomp audit profiles are active.
+        pattern:
+          metadata:
+            annotations:
+              dora.io/kernel-audit-enabled: "true"

@@ -1,0 +1,52 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doraresourcelimits
+  annotations:
+    dora.article: "11(1)"
+    dora.requirement: "REQ-006"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraResourceLimits
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doraresourcelimits
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.requests.cpu
+          msg := sprintf(
+            "DORA Art. 11(1) violation [REQ-006]: Container '%s' missing resources.requests.cpu.",
+            [container.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.requests.memory
+          msg := sprintf(
+            "DORA Art. 11(1) violation [REQ-006]: Container '%s' missing resources.requests.memory.",
+            [container.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.cpu
+          msg := sprintf(
+            "DORA Art. 11(1) violation [REQ-006]: Container '%s' missing resources.limits.cpu.",
+            [container.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.memory
+          msg := sprintf(
+            "DORA Art. 11(1) violation [REQ-006]: Container '%s' missing resources.limits.memory.",
+            [container.name]
+          )
+        }

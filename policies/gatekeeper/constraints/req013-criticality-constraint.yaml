@@ -1,0 +1,20 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraCriticality
+metadata:
+  name: dora-art6-require-criticality
+  annotations:
+    dora.article: "6(1)(b)"
+    dora.requirement: "REQ-013"
+    dora.coverage: "partially-automatable"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - gatekeeper-system
+      - kyverno
+      - argocd

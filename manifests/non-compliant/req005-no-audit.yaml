@@ -1,0 +1,44 @@
+# TEST: Should be BLOCKED — no kernel audit annotation
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req005-violation
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-005"
+    dora.expected-result: "denied"
+    dora.io/criticality: "low"
+  annotations:
+    dora.io/description: "Test workload for REQ-005"
+    dora.io/logging-configured: "true"
+    dora.io/pdb-configured: "true"
+    dora.io/business-function: "testing"
+    dora.io/data-classification: "internal"
+    dora.io/asset-owner: "test-team"
+    dora.io/dependencies: "none"
+    # VIOLATION: missing dora.io/kernel-audit-enabled
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-req005-bad
+  template:
+    metadata:
+      labels:
+        app: test-req005-bad
+    spec:
+      serviceAccountName: dora-test-sa
+      containers:
+        - name: no-audit
+          image: nginx:1.27
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 200m, memory: 256Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }

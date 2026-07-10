@@ -1,0 +1,31 @@
+# TEST: Should be BLOCKED — uses :latest tag
+# Targets: REQ-009 (DORA Art. 9(2))
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-req009-violation
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-009"
+    dora.expected-result: "denied"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-req009-bad
+  template:
+    metadata:
+      labels:
+        app: test-req009-bad
+    spec:
+      serviceAccountName: dora-test-sa
+      containers:
+        - name: latest-container
+          image: nginx:latest
+          # VIOLATION: :latest tag — mutable, non-reproducible
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop: ["ALL"]

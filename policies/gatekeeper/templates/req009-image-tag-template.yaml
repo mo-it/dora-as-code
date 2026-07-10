@@ -1,0 +1,36 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doraimagetag
+  annotations:
+    dora.article: "9(2)"
+    dora.requirement: "REQ-009"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraImageTag
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doraimagetag
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          endswith(container.image, ":latest")
+          msg := sprintf(
+            "DORA Art. 9(2) violation [REQ-009]: Container '%s' uses ':latest' tag. Use a specific version or digest for integrity.",
+            [container.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          # Image has no tag (no colon) and no digest (no @)
+          not contains(container.image, ":")
+          not contains(container.image, "@")
+          msg := sprintf(
+            "DORA Art. 9(2) violation [REQ-009]: Container '%s' image '%s' has no tag or digest. Untagged images default to ':latest'.",
+            [container.name, container.image]
+          )
+        }

@@ -1,0 +1,46 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art11-require-resource-limits
+  annotations:
+    dora.article: "11(1)"
+    dora.requirement: "REQ-006"
+    dora.requirement-text: "Ensure ICT system resilience through resource governance"
+    dora.coverage: "fully-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-requests-and-limits
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 11(1) violation [REQ-006]: All containers must specify
+          resources.requests (cpu, memory) AND resources.limits (cpu, memory).
+          Unbounded resource usage risks denial of service.
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"

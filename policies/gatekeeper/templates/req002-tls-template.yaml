@@ -1,0 +1,42 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doratls
+  annotations:
+    dora.article: "9(2)"
+    dora.requirement: "REQ-002"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraTls
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doratls
+
+        violation[{"msg": msg}] {
+          not input.review.object.spec.tls
+          msg := sprintf(
+            "DORA Art. 9(2) violation [REQ-002]: Ingress '%s' has no TLS configuration. All external endpoints must encrypt data in transit.",
+            [input.review.object.metadata.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          tls := input.review.object.spec.tls[_]
+          not tls.secretName
+          msg := sprintf(
+            "DORA Art. 9(2) violation [REQ-002]: Ingress '%s' TLS entry missing secretName. A TLS certificate secret is required.",
+            [input.review.object.metadata.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          tls := input.review.object.spec.tls[_]
+          count(tls.hosts) == 0
+          msg := sprintf(
+            "DORA Art. 9(2) violation [REQ-002]: Ingress '%s' TLS entry has no hosts specified.",
+            [input.review.object.metadata.name]
+          )
+        }

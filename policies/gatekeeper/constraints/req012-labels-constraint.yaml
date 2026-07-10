@@ -1,0 +1,27 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DoraLabels
+metadata:
+  name: dora-art5-require-labels
+  annotations:
+    dora.article: "5(2)(a)"
+    dora.requirement: "REQ-012"
+    dora.coverage: "partially-automatable"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+      - apiGroups: [""]
+        kinds: ["Service"]
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - gatekeeper-system
+      - kyverno
+      - argocd
+  parameters:
+    requiredLabels:
+      - "app"
+      - "dora.io/owner"
+      - "dora.io/team"

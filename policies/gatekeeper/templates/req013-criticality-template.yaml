@@ -1,0 +1,27 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doracriticality
+  annotations:
+    dora.article: "6(1)(b)"
+    dora.requirement: "REQ-013"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraCriticality
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doracriticality
+        violation[{"msg": msg}] {
+          labels := input.review.object.metadata.labels
+          not valid_criticality(labels)
+          msg := sprintf(
+            "DORA Art. 6(1)(b) violation [REQ-013]: %s '%s' missing or invalid label dora.io/criticality. Must be high, medium, or low.",
+            [input.review.object.kind, input.review.object.metadata.name]
+          )
+        }
+        valid_criticality(labels) { labels["dora.io/criticality"] == "high" }
+        valid_criticality(labels) { labels["dora.io/criticality"] == "medium" }
+        valid_criticality(labels) { labels["dora.io/criticality"] == "low" }

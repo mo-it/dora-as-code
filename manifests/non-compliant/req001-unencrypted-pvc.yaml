@@ -1,0 +1,18 @@
+# TEST: Should be BLOCKED — uses unencrypted local-path StorageClass
+# Targets: REQ-001 (DORA Art. 9(2))
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-req001-violation
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-001"
+    dora.expected-result: "denied"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi

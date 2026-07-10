@@ -1,0 +1,34 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: dorareplicas
+  annotations:
+    dora.article: "11(1)"
+    dora.requirement: "REQ-007"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraReplicas
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            minReplicas:
+              type: integer
+              description: "Minimum replica count for matched Deployments"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package dorareplicas
+
+        violation[{"msg": msg}] {
+          # Only check Deployments with criticality: high label
+          input.review.object.metadata.labels["dora.io/criticality"] == "high"
+          replicas := object.get(input.review.object.spec, "replicas", 1)
+          replicas < input.parameters.minReplicas
+          msg := sprintf(
+            "DORA Art. 11(1) violation [REQ-007]: Deployment '%s' has %d replicas but criticality: high requires at least %d.",
+            [input.review.object.metadata.name, replicas, input.parameters.minReplicas]
+          )
+        }

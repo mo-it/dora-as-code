@@ -1,0 +1,38 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art9-require-auth-timeout
+  annotations:
+    dora.article: "9(4)(c)"
+    dora.requirement: "REQ-026"
+    dora.requirement-text: "Implement authentication and session management controls"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-timeout-annotation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Ingress
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 9(4)(c) violation [REQ-026]: Ingress resources must
+          declare session timeout configuration. Add annotation
+          dora.io/session-timeout-configured: "true" after setting
+          appropriate timeout values in the ingress controller.
+        pattern:
+          metadata:
+            annotations:
+              dora.io/session-timeout-configured: "true"

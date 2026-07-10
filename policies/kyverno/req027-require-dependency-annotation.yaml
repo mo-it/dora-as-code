@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art6-require-dependency
+  annotations:
+    dora.article: "6(2)"
+    dora.requirement: "REQ-027"
+    dora.requirement-text: "Map ICT asset dependencies and interconnections"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-dependency-annotation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - Service
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 6(2) violation [REQ-027]: Resources must declare
+          dependencies via annotation dora.io/dependencies.
+          Value should list upstream/downstream services (e.g.,
+          "postgres-db,redis-cache") or "none" if standalone.
+        pattern:
+          metadata:
+            annotations:
+              dora.io/dependencies: "?*"

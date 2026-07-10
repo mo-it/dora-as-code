@@ -1,0 +1,33 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: dorapdb
+  annotations:
+    dora.article: "11(5)"
+    dora.requirement: "REQ-024"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraPdb
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package dorapdb
+
+        violation[{"msg": msg}] {
+          labels := input.review.object.metadata.labels
+          criticality := labels["dora.io/criticality"]
+          criticality_matches(criticality)
+
+          annotations := object.get(input.review.object.metadata, "annotations", {})
+          not annotations["dora.io/pdb-configured"]
+
+          msg := sprintf(
+            "DORA Art. 11(5) violation [REQ-024]: Deployment '%s' (criticality: %s) requires a PodDisruptionBudget. Add annotation dora.io/pdb-configured: 'true' after creating a matching PDB.",
+            [input.review.object.metadata.name, criticality]
+          )
+        }
+
+        criticality_matches(c) { c == "high" }
+        criticality_matches(c) { c == "medium" }

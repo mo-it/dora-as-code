@@ -1,0 +1,27 @@
+# TEST: Should be ALLOWED — Ingress with TLS configured
+# Targets: REQ-002 (DORA Art. 9(2))
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-req002-compliant
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.requirement: "REQ-002"
+    dora.expected-result: "allowed"
+spec:
+  tls:
+    - secretName: app-tls-cert
+      hosts:
+        - app.example.com
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-service
+                port:
+                  number: 443

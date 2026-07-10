@@ -1,35 +1,35 @@
-# TEST: Should be BLOCKED — no resource requests or limits
-# Targets: REQ-006 (DORA Art. 11(1))
+# TEST: Should be BLOCKED — missing required labels
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-req006-violation
+  name: test-req012-violation
   namespace: dora-test
   labels:
     dora.test: "true"
-    dora.requirement: "REQ-006"
+    dora.requirement: "REQ-012"
     dora.expected-result: "denied"
+    # VIOLATION: missing app, dora.io/owner, dora.io/team labels
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: test-req006-bad
+      app: test-req012-bad
   template:
     metadata:
       labels:
-        app: test-req006-bad
+        app: test-req012-bad
     spec:
       serviceAccountName: dora-test-sa
       containers:
-        - name: unlimited-container
+        - name: no-labels
           image: nginx:1.27
-          # VIOLATION: no resources block at all
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 200m, memory: 256Mi }
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            seccompProfile:
-              type: RuntimeDefault
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }

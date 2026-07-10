@@ -1,0 +1,44 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doraregistries
+  annotations:
+    dora.article: "15(1)"
+    dora.requirement: "REQ-023b"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraRegistries
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            allowedRegistries:
+              type: array
+              items:
+                type: string
+              description: "List of allowed registry prefixes"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doraregistries
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not registry_allowed(container.image)
+          msg := sprintf(
+            "DORA Art. 15(1) violation [REQ-023b]: Container '%s' uses image '%s' from a non-approved registry.",
+            [container.name, container.image]
+          )
+        }
+
+        registry_allowed(image) {
+          allowed := input.parameters.allowedRegistries[_]
+          startswith(image, allowed)
+        }
+
+        # Allow short-form Docker Hub images (e.g., nginx:1.27)
+        registry_allowed(image) {
+          not contains(image, "/")
+        }

@@ -1,29 +1,37 @@
-# TEST: Should be BLOCKED — no resource requests or limits
-# Targets: REQ-006 (DORA Art. 11(1))
+# TEST: Should be BLOCKED — critical Deployment without PDB annotation
+# Targets: REQ-024 (DORA Art. 11(5))
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-req006-violation
+  name: test-req024-violation
   namespace: dora-test
   labels:
     dora.test: "true"
-    dora.requirement: "REQ-006"
+    dora.requirement: "REQ-024"
     dora.expected-result: "denied"
+    dora.io/criticality: "high"
+  # VIOLATION: no dora.io/pdb-configured annotation
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
-      app: test-req006-bad
+      app: test-req024-bad
   template:
     metadata:
       labels:
-        app: test-req006-bad
+        app: test-req024-bad
     spec:
       serviceAccountName: dora-test-sa
       containers:
-        - name: unlimited-container
+        - name: no-pdb-container
           image: nginx:1.27
-          # VIOLATION: no resources block at all
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000

@@ -1,0 +1,41 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art5-require-labels
+  annotations:
+    dora.article: "5(2)(a)"
+    dora.requirement: "REQ-012"
+    dora.requirement-text: "Maintain ICT asset inventory"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-inventory-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+                - Service
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 5(2)(a) violation [REQ-012]: Resources must have
+          labels: app, dora.io/owner, dora.io/team for asset inventory.
+        pattern:
+          metadata:
+            labels:
+              app: "?*"
+              dora.io/owner: "?*"
+              dora.io/team: "?*"

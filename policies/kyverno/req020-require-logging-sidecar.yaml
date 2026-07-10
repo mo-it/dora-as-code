@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art10-require-logging
+  annotations:
+    dora.article: "10(3)"
+    dora.requirement: "REQ-020"
+    dora.requirement-text: "Implement application-level log collection and forwarding"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-logging-annotation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 10(3) violation [REQ-020]: Workloads must have
+          application-level logging configured. Add annotation
+          dora.io/logging-configured: "true" after verifying
+          log collection agent (Fluentbit/Loki/etc) is active.
+        pattern:
+          metadata:
+            annotations:
+              dora.io/logging-configured: "true"

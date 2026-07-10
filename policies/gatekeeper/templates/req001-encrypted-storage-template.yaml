@@ -1,0 +1,54 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doraencryptedstorageclass
+  annotations:
+    dora.article: "9(2)"
+    dora.requirement: "REQ-001"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraEncryptedStorageclass
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            deniedStorageClasses:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doraencryptedstorageclass
+
+        violation[{"msg": msg}] {
+          # Check if storageClassName is in the denied list
+          sc := input.review.object.spec.storageClassName
+          denied := input.parameters.deniedStorageClasses[_]
+          sc == denied
+          msg := sprintf(
+            "DORA Art. 9(2) violation [REQ-001]: PVC '%s' uses unencrypted StorageClass '%s'. Use a StorageClass with encryption at rest.",
+            [input.review.object.metadata.name, sc]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          # Check if storageClassName is not set at all
+          not input.review.object.spec.storageClassName
+          msg := sprintf(
+            "DORA Art. 9(2) violation [REQ-001]: PVC '%s' does not specify a StorageClass. Explicit encrypted StorageClass required.",
+            [input.review.object.metadata.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+          # Check for encryption annotation
+          annotations := object.get(input.review.object.metadata, "annotations", {})
+          not annotations["dora.io/encryption-at-rest"]
+          msg := sprintf(
+            "DORA Art. 9(2) violation [REQ-001]: PVC '%s' missing annotation dora.io/encryption-at-rest: 'true'.",
+            [input.review.object.metadata.name]
+          )
+        }

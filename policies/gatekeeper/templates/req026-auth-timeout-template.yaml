@@ -1,0 +1,24 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doraauthtimeout
+  annotations:
+    dora.article: "9(4)(c)"
+    dora.requirement: "REQ-026"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraAuthTimeout
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doraauthtimeout
+        violation[{"msg": msg}] {
+          annotations := object.get(input.review.object.metadata, "annotations", {})
+          not annotations["dora.io/session-timeout-configured"]
+          msg := sprintf(
+            "DORA Art. 9(4)(c) violation [REQ-026]: Ingress '%s' missing annotation dora.io/session-timeout-configured: 'true'.",
+            [input.review.object.metadata.name]
+          )
+        }

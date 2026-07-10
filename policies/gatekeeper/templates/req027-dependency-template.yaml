@@ -1,0 +1,24 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: doradependency
+  annotations:
+    dora.article: "6(2)"
+    dora.requirement: "REQ-027"
+spec:
+  crd:
+    spec:
+      names:
+        kind: DoraDependency
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package doradependency
+        violation[{"msg": msg}] {
+          annotations := object.get(input.review.object.metadata, "annotations", {})
+          not annotations["dora.io/dependencies"]
+          msg := sprintf(
+            "DORA Art. 6(2) violation [REQ-027]: %s '%s' missing annotation dora.io/dependencies.",
+            [input.review.object.kind, input.review.object.metadata.name]
+          )
+        }

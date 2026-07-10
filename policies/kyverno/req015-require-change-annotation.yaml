@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art13-require-change-annotation
+  annotations:
+    dora.article: "13(1)"
+    dora.requirement: "REQ-015"
+    dora.requirement-text: "Implement ICT change management processes"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-change-ticket
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 13(1) violation [REQ-015]: Workload changes must
+          reference an approved change ticket. Add annotations:
+          dora.io/change-id and dora.io/approved-by.
+        pattern:
+          metadata:
+            annotations:
+              dora.io/change-id: "?*"
+              dora.io/approved-by: "?*"
