@@ -9,7 +9,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: file:///home/mohit/dora-as-code
+    repoURL: https://github.com/mo-it/dora-as-code.git
     targetRevision: HEAD
     path: manifests
     directory:

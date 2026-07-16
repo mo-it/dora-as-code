@@ -11,7 +11,7 @@ spec:
   source:
     # UPDATE when pushed to GitHub:
     # repoURL: https://github.com/YOUR_USERNAME/dora-as-code.git
-    repoURL: file:///home/mohit/dora-as-code
+    repoURL: https://github.com/mo-it/dora-as-code.git
     targetRevision: HEAD
     path: policies/gatekeeper
     directory:
