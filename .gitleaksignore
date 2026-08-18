@@ -4,3 +4,5 @@
 # that is the condition the policy detects. Verified 18 Aug 2026.
 evidence/forensics/v1-manifests/compliant/req023-sealed-secret.yaml:generic-api-key:15
 evidence/forensics/v1-manifests/non-compliant/req023-plain-secret.yaml:generic-api-key:14
+51311f94aa2f616ff53ba59f78bd41e44155aa75:manifests/compliant/req023-sealed-secret.yaml:generic-api-key:15
+51311f94aa2f616ff53ba59f78bd41e44155aa75:manifests/non-compliant/req023-plain-secret.yaml:generic-api-key:14
