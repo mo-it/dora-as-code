@@ -1,218 +1,363 @@
 #!/bin/bash
 # =============================================================================
-# benchmark-rcbd.sh — Phase 4 benchmark, randomised complete block design
+# benchmark-rcbd.sh (v3) — CA2-aligned, randomised complete block design
 # =============================================================================
 #
-# WHY THIS REPLACES benchmark-full.sh
-# -----------------------------------
-# The original harness ran all 50 baseline cycles, then all 50 Kyverno cycles,
-# then all 50 Gatekeeper cycles. That design confounds "which policy engine"
-# with "when in the session the measurement happened". Analysis of the
-# 20260726-232252 run showed:
+# ALIGNMENT WITH THE CA2 PROPOSAL
+# --------------------------------
+# CA2 specified: "The time overhead each tool adds to ArgoCD sync operations
+# will be measured. Fifty sync cycles will be executed for each of three
+# configurations; baseline (no policy engine), Kyverno, and OPA Gatekeeper,
+# using the same set of manifests. Mean sync duration and standard deviation
+# will be compared across the three conditions."
 #
-#   * a strong monotonic downward trend within the Kyverno run
-#     (Spearman rho = -0.85, p ~ 1e-14) — the machine got faster as it warmed;
-#   * mean system load of 3.14 during baseline vs 1.42 during Kyverno;
-#   * a significant positive load/duration correlation (rho = 0.26, p = 0.001).
+# This script implements exactly that, with one deliberate methodological
+# correction:
 #
-# Net effect: the baseline appeared SLOWER than running with an admission
-# webhook, which is physically implausible. The difference was session drift,
-# not engine behaviour.
+#   CA2 element                     | Implementation
+#   --------------------------------|--------------------------------------
+#   ArgoCD sync operations          | primary metric argocd_sync_ms
+#   50 cycles per configuration     | 10 blocks x 5 reps = 50
+#   baseline = NO policy engine     | controllers scaled to 0 replicas
+#   same manifests across configs   | dora-bench-compliant (compliant only)
+#   mean and standard deviation     | reported, alongside non-parametric tests
+#   CORRECTION: cycle ordering      | randomised blocks, not sequential runs
 #
-# A randomised complete block design fixes this. Time is divided into blocks.
-# Every configuration is measured once inside every block, in a randomised
-# order. Any slow drift affects all three configurations roughly equally,
-# so it cancels in the between-configuration comparison instead of loading
-# onto whichever config happened to run first.
+# WHY THE ORDERING CORRECTION IS NECESSARY
+# ----------------------------------------
+# CA2 implied sequential execution (all baseline, then Kyverno, then Gatekeeper).
+# The 26 July run did exactly that and produced an impossible result: the
+# baseline was SLOWER than running with an admission webhook. Diagnostics showed
+# Spearman rho = -0.85 (p ~ 1e-14) between cycle index and duration within the
+# Kyverno block, and mean 1-minute load of 3.14 during baseline versus 1.42
+# during Kyverno. Configuration was confounded with time and system load.
 #
-# Café analogy: the old design timed the espresso bar all morning, the pastry
-# counter all afternoon, and the kitchen all evening — then blamed the pastry
-# counter for being slow, when really the whole café just gets busier as the
-# day goes on. The new design times all three counters once an hour, every
-# hour. Rush hour hits all of them, so the comparison stays fair.
+# Randomised blocking measures every configuration once inside every block, in
+# an order reshuffled per block, so drift affects all three roughly equally.
+# This is a strengthening of the CA2 design, not a departure from it, and should
+# be presented that way in Chapter 3.
 #
-# WHAT IT MEASURES
-# ----------------
-# Two distinct metrics, reported separately (the original conflated them):
+# TRUE BASELINE — why controllers are scaled to zero
+# --------------------------------------------------
+# "No policy engine" means the controllers are not running. Leaving them
+# resident and merely disabling enforcement would measure the enforcement path
+# only, excluding controller CPU and memory footprint, which is part of the
+# overhead CA2 asks about.
 #
-#   1. admission_ms  — kubectl apply round-trip through the admission path.
-#                      This is the direct policy-engine cost.
-#   2. argocd_sync_ms — ArgoCD Application reconciliation to Synced/Healthy.
-#                      This is the GitOps pipeline cost the CA2 proposal
-#                      actually named.
+# Scaling order matters. Kyverno's webhooks carry failurePolicy=Fail, so with
+# the pods at zero and the webhooks still registered the API server rejects
+# everything. The controllers are therefore scaled down FIRST and the webhooks
+# removed AFTER. Kyverno recreates its own webhooks on startup, so this is
+# reversible.
+#
+# Gatekeeper's webhook is a static Helm artefact and is NEVER deleted -- doing
+# so destroyed it on 26 July and silently invalidated ten hours of data. It is
+# neutralised by patching objectSelector instead, which is reversible.
 #
 # USAGE
-#   ./benchmark-rcbd.sh [BLOCKS] [REPS_PER_BLOCK] [ARGOCD_APP]
-#   ./benchmark-rcbd.sh 10 5 dora-test-workloads
+#   ./scripts/benchmark-rcbd.sh [BLOCKS] [REPS] [ARGOCD_APP]
+#   ./scripts/benchmark-rcbd.sh 10 5          # 50 cycles per config, as CA2
+#   WARMUP=3 ./scripts/benchmark-rcbd.sh 1 2  # pilot, ~6 minutes
 #
-#   Default 10 blocks x 5 reps = 50 observations per configuration,
-#   matching the CA2-proposed sample size with a sound design.
-#
-# PREREQUISITES
-#   kubectl, argocd CLI logged in, bc, python3
-#   Run ./isolate-engine.sh restore afterwards.
+# Expect roughly 60-90 minutes for the full run. Leave it undisturbed: your own
+# browser tabs are exactly the system load that corrupted the first attempt.
 # =============================================================================
 
-set -uo pipefail   # NOTE: -e deliberately omitted. The original script died
-                   # silently when grep found no metrics on baseline runs.
+set -uo pipefail   # -e omitted deliberately: v1 died silently on empty greps
 
 BLOCKS="${1:-10}"
 REPS="${2:-5}"
 ARGOCD_APP="${3:-dora-bench-compliant}"
-WARMUP="${WARMUP:-10}"          # discarded cycles before measurement starts
-LOAD_CEILING="${LOAD_CEILING:-6.0}"   # flag cycles taken under extreme load
+WARMUP="${WARMUP:-5}"
+LOAD_CEILING="${LOAD_CEILING:-6.0}"
+SETTLE="${SETTLE:-15}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-RESULTS_DIR="$SCRIPT_DIR/../results"
-MANIFEST_DIR="$SCRIPT_DIR/../manifests"
-ISOLATE="$SCRIPT_DIR/isolate-engine.sh"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+RESULTS_DIR="$REPO_DIR/results"
+PROBE_BAD="$REPO_DIR/manifests/non-compliant/req010-violation.yaml"
+GK_WH="gatekeeper-validating-webhook-configuration"
+SENTINEL='{"matchLabels":{"dora-isolation/disabled":"true"}}'
+BACKUP="$REPO_DIR/evidence/forensics/all-webhooks-20260726-131348.yaml"
+
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 OUTFILE="$RESULTS_DIR/benchmark-rcbd-${TIMESTAMP}.csv"
-
 mkdir -p "$RESULTS_DIR"
 
-GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; NC='\033[0m'
+GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 log()  { echo -e "${GREEN}[✓]${NC} $1"; }
 info() { echo -e "${BLUE}[i]${NC} $1"; }
 warn() { echo -e "${YELLOW}[!]${NC} $1"; }
+err()  { echo -e "${RED}[✗]${NC} $1"; }
 
-kubectl create namespace dora-test >/dev/null 2>&1 || true
+# --- guaranteed recovery -------------------------------------------------------
+# Twice now an aborted run has left Kyverno's webhooks registered with the pods
+# at zero replicas. failurePolicy=Fail with no backend means the API server
+# rejects EVERY write in the cluster, including the deletes needed to clean up.
+# This trap fires on normal exit, Ctrl-C, and kill, so the cluster can never be
+# left in that state again.
+RESTORED=0
+restore_all() {
+    [ "$RESTORED" -eq 1 ] && return
+    RESTORED=1
+    echo ""
+    info "Restoring engines (exit trap)..."
+    kubectl scale deployment -n kyverno --all --replicas=1 >/dev/null 2>&1
+    kubectl scale deployment -n gatekeeper-system --all --replicas=1 >/dev/null 2>&1
+    kubectl wait --for=condition=ready pod --all -n kyverno --timeout=240s >/dev/null 2>&1
+    local waited=0
+    while [ "$waited" -lt 240 ]; do
+        [ "$(kubectl get validatingwebhookconfigurations --no-headers 2>/dev/null \
+             | grep -c '^kyverno-')" -ge 7 ] && break
+        sleep 5; waited=$((waited+5))
+        printf "\r    restoring Kyverno webhooks (%ds)   " "$waited"
+    done
+    gk_webhook on >/dev/null 2>&1
+    echo ""
+    local n
+    n=$(kubectl get validatingwebhookconfigurations --no-headers 2>/dev/null | wc -l)
+    [ "$n" -eq 8 ] && log "Cluster restored: $n webhook configs" \
+                   || err "Cluster NOT fully restored: $n/8 webhook configs — run '$0 recover'"
+}
+trap restore_all EXIT INT TERM
 
-# --- API server metrics access -----------------------------------------------
-TOKEN=$(kubectl create token metrics-reader --duration=180m 2>/dev/null) || true
-API_SERVER="https://127.0.0.1:6443"
+KYVERNO_WH=(
+  kyverno-resource-validating-webhook-cfg
+  kyverno-policy-validating-webhook-cfg
+  kyverno-exception-validating-webhook-cfg
+  kyverno-cel-exception-validating-webhook-cfg
+  kyverno-global-context-validating-webhook-cfg
+  kyverno-cleanup-validating-webhook-cfg
+  kyverno-ttl-validating-webhook-cfg
+)
 
-# The original script grepped for the engine name and got nothing for
-# Gatekeeper — 0 of 50 cycles recorded a webhook delta, so the Gatekeeper
-# admission timings were never actually captured. These are the real webhook
-# names as they appear in the apiserver metric labels.
-webhook_pattern_for() {
+# --- engine control -----------------------------------------------------------
+kyverno_down() {
+    kubectl scale deployment -n kyverno --all --replicas=0 >/dev/null 2>&1
+    kubectl wait --for=delete pod --all -n kyverno --timeout=120s >/dev/null 2>&1
+    # Only AFTER the pods are gone: failurePolicy=Fail with no backend blocks
+    # every write in the cluster.
+    kubectl delete validatingwebhookconfiguration "${KYVERNO_WH[@]}" \
+        --ignore-not-found >/dev/null 2>&1
+}
+
+kyverno_up() {
+    kubectl scale deployment -n kyverno --all --replicas=1 >/dev/null 2>&1
+    kubectl wait --for=condition=ready pod --all -n kyverno --timeout=180s >/dev/null 2>&1
+    # Poll for webhook re-registration rather than guessing a sleep duration.
+    # After scaling from zero Kyverno takes 30-60s to rebuild its seven webhook
+    # configurations. A fixed 15s sleep let timing start before the engine was
+    # in the admission path -- the same class of error as the 26 July run.
+    local waited=0
+    while [ "$waited" -lt 300 ]; do
+        local n
+        n=$(kubectl get validatingwebhookconfigurations --no-headers 2>/dev/null \
+            | grep -c "^kyverno-")
+        [ "$n" -ge 7 ] && { sleep 8; return 0; }
+        sleep 5; waited=$((waited + 5))
+        printf "\r    waiting for Kyverno webhooks: %d/7 (%ds)   " "$n" "$waited"
+    done
+    warn "Kyverno webhooks did not reach 7 within 300s"
+    return 1
+}
+
+gatekeeper_down() {
+    kubectl scale deployment -n gatekeeper-system --all --replicas=0 >/dev/null 2>&1
+    kubectl wait --for=delete pod --all -n gatekeeper-system --timeout=120s >/dev/null 2>&1
+    gk_webhook off
+}
+
+gatekeeper_up() {
+    kubectl scale deployment -n gatekeeper-system --all --replicas=1 >/dev/null 2>&1
+    kubectl wait --for=condition=ready pod -l control-plane=controller-manager \
+        -n gatekeeper-system --timeout=180s >/dev/null 2>&1
+    gk_webhook on
+    sleep 10
+}
+
+gk_webhook() {   # on | off — NEVER delete this object
+    kubectl get validatingwebhookconfiguration "$GK_WH" >/dev/null 2>&1 || return 1
+    local n patch i=0
+    n=$(kubectl get validatingwebhookconfiguration "$GK_WH" \
+        -o jsonpath='{.webhooks[*].name}' 2>/dev/null | wc -w)
+    patch="["
+    while [ "$i" -lt "$n" ]; do
+        [ "$i" -gt 0 ] && patch="$patch,"
+        if [ "$1" = "off" ]; then
+            patch="$patch{\"op\":\"replace\",\"path\":\"/webhooks/$i/objectSelector\",\"value\":$SENTINEL}"
+        else
+            patch="$patch{\"op\":\"replace\",\"path\":\"/webhooks/$i/objectSelector\",\"value\":{}}"
+        fi
+        i=$((i + 1))
+    done
+    kubectl patch validatingwebhookconfiguration "$GK_WH" --type=json -p "$patch]" >/dev/null 2>&1
+}
+
+apply_config() {
     case "$1" in
-        kyverno)    echo "kyverno" ;;
-        gatekeeper) echo "gatekeeper.sh" ;;   # validation.gatekeeper.sh
-        *)          echo "__none__" ;;
+        baseline)   kyverno_down; gatekeeper_down ;;
+        kyverno)    kyverno_up;   gatekeeper_down ;;
+        gatekeeper) kyverno_down; gatekeeper_up   ;;
     esac
+    sleep "$SETTLE"
 }
 
-get_webhook_sum() {
-    local pattern="$1"
-    [ "$pattern" = "__none__" ] && { echo "0"; return; }
-    curl -sk -H "Authorization: Bearer $TOKEN" "$API_SERVER/metrics" 2>/dev/null \
-        | grep "apiserver_admission_webhook_admission_duration_seconds_sum" 2>/dev/null \
-        | grep -i "$pattern" 2>/dev/null \
-        | awk '{sum+=$NF} END {printf "%.6f", sum+0}' || echo "0"
+# Behavioural gate. Status fields lie: on 26 July both engines reported healthy
+# pods and active constraints while Gatekeeper had no webhook at all. Only a real
+# admission attempt is trustworthy, so every configuration is verified before any
+# timing is recorded.
+verify_config() {
+    local cfg="$1" out attempt=0
+    # Retry with backoff: webhook registration is eventually consistent, so a
+    # single probe can fail while the engine is still coming up. Three attempts
+    # over ~45s distinguishes "not ready yet" from "not isolated correctly".
+    while [ "$attempt" -lt 3 ]; do
+        out=$(kubectl apply --dry-run=server -f "$PROBE_BAD" 2>&1)
+        case "$cfg" in
+            baseline)   echo "$out" | grep -q "dry run"     && return 0 ;;
+            kyverno)    echo "$out" | grep -qi "kyverno"    && return 0 ;;
+            gatekeeper) echo "$out" | grep -qi "gatekeeper" && return 0 ;;
+        esac
+        attempt=$((attempt + 1))
+        [ "$attempt" -lt 3 ] && { printf "\r    verify retry %d/3 for %s   " "$attempt" "$cfg"; sleep 15; }
+    done
+    echo ""
+    err "verification FAILED for '$cfg' after 3 attempts"; echo "$out" | head -3; return 1
 }
 
-# --- measurement primitives ---------------------------------------------------
-measure_admission_ms() {
-    # kubectl apply round-trip. No sleep inside the timed window — the original
-    # baked a fixed 0.5s sleep into the measurement, inflating every reading
-    # by a constant and compressing the relative difference between configs.
-    local start_ns end_ns
-    start_ns=$(date +%s%N)
-    kubectl apply -f "$MANIFEST_DIR/compliant/req006-with-resource-limits.yaml" \
-        -n dora-test >/dev/null 2>&1 || true
-    end_ns=$(date +%s%N)
-    echo $(( (end_ns - start_ns) / 1000000 ))
-}
-
+# --- measurement --------------------------------------------------------------
+# CA2's primary metric. --replace forces genuine resource replacement each cycle,
+# so every object traverses the admission path; a plain sync on an unchanged
+# application is a no-op and would measure nothing.
 measure_argocd_sync_ms() {
-    # Real ArgoCD reconciliation: force a sync and wait for Synced + Healthy.
-    # Returns -1 if the argocd CLI is unavailable, so the admission metric
-    # still gets collected rather than aborting the whole run.
-    command -v argocd >/dev/null 2>&1 || { echo "-1"; return; }
-    local start_ns end_ns
-    start_ns=$(date +%s%N)
-    argocd app sync "$ARGOCD_APP" --prune --timeout 120 >/dev/null 2>&1 || true
-    argocd app wait "$ARGOCD_APP" --health --sync --timeout 120 >/dev/null 2>&1 || true
-    end_ns=$(date +%s%N)
-    echo $(( (end_ns - start_ns) / 1000000 ))
+    local s e
+    s=$(date +%s%N)
+    # --replace was removed: it deletes and recreates Deployments, so the timing
+    # was dominated by nginx pod termination and rescheduling (197s per cycle)
+    # rather than by admission. --force alone pushes every resource through the
+    # API server, so each object still traverses the admission webhooks.
+    # Waiting on --sync only, never --health, for the same reason.
+    argocd app sync "$ARGOCD_APP" --force --timeout 180 >/dev/null 2>&1
+    argocd app wait "$ARGOCD_APP" --sync --timeout 180 >/dev/null 2>&1
+    e=$(date +%s%N)
+    echo $(( (e - s) / 1000000 ))
 }
 
 run_cycle() {
-    local block="$1" config="$2" rep="$3" order_pos="$4"
-    local pattern load_before load_after wb wa delta_ms adm sync flag
-
-    pattern=$(webhook_pattern_for "$config")
-    load_before=$(awk '{print $1}' /proc/loadavg)
-    wb=$(get_webhook_sum "$pattern")
-
-    adm=$(measure_admission_ms)
+    local block="$1" cfg="$2" rep="$3" pos="$4"
+    local lb la sync flag
+    lb=$(awk '{print $1}' /proc/loadavg)
     sync=$(measure_argocd_sync_ms)
+    la=$(awk '{print $1}' /proc/loadavg)
 
-    wa=$(get_webhook_sum "$pattern")
-    load_after=$(awk '{print $1}' /proc/loadavg)
-    delta_ms=$(echo "scale=3; ($wa - $wb) * 1000" | bc 2>/dev/null || echo "0")
-
-    # Flag rather than silently drop. Dropping observations post hoc is a
-    # researcher degree of freedom an examiner will ask about; flagging lets
-    # the analysis script run the comparison with and without them.
+    # Flagged, not dropped. Removing observations post hoc is a researcher degree
+    # of freedom an examiner will ask about; flagging lets the analysis run both
+    # with and without them.
     flag="ok"
-    if (( $(echo "$load_before > $LOAD_CEILING" | bc -l 2>/dev/null || echo 0) )); then
-        flag="high_load"
-    fi
+    (( $(echo "$lb > $LOAD_CEILING" | bc -l 2>/dev/null || echo 0) )) && flag="high_load"
 
-    echo "$block,$config,$rep,$order_pos,$adm,$sync,$delta_ms,$load_before,$load_after,$flag,$(date -Iseconds)" \
-        >> "$OUTFILE"
-
-    printf "\r  block %02d | %-11s | rep %d | admission=%5sms sync=%6sms load=%s %s   " \
-        "$block" "$config" "$rep" "$adm" "$sync" "$load_before" \
-        "$([ "$flag" = "high_load" ] && echo '[HIGH LOAD]' || echo '')"
+    echo "$block,$cfg,$rep,$pos,$sync,$sync,0,$lb,$la,$flag,$(date -Iseconds)" >> "$OUTFILE"
+    printf "\r    %-11s rep %d/%d  sync=%6sms  load=%-5s %s      " \
+        "$cfg" "$rep" "$REPS" "$sync" "$lb" \
+        "$([ "$flag" = high_load ] && echo '[HIGH LOAD]')"
 }
 
-# --- main ---------------------------------------------------------------------
-echo "cycle_block,configuration,rep,order_in_block,admission_ms,argocd_sync_ms,webhook_delta_ms,load_before,load_after,quality_flag,timestamp" > "$OUTFILE"
+# --- pre-flight ---------------------------------------------------------------
+# Standalone recovery, for when a previous run left the cluster wedged.
+if [ "${1:-}" = "recover" ]; then
+    trap - EXIT INT TERM
+    info "Recovering cluster state..."
+    kubectl scale deployment -n kyverno --all --replicas=1 >/dev/null 2>&1
+    kubectl scale deployment -n gatekeeper-system --all --replicas=1 >/dev/null 2>&1
+    kubectl wait --for=condition=ready pod --all -n kyverno --timeout=240s >/dev/null 2>&1
+    w=0
+    while [ "$w" -lt 240 ]; do
+        n=$(kubectl get validatingwebhookconfigurations --no-headers 2>/dev/null | grep -c '^kyverno-')
+        [ "$n" -ge 7 ] && break
+        sleep 5; w=$((w+5)); printf "\r    Kyverno webhooks: %d/7 (%ds)   " "$n" "$w"
+    done
+    echo ""
+    gk_webhook on >/dev/null 2>&1
+    kubectl get validatingwebhookconfigurations --no-headers | wc -l
+    log "Recovery complete"
+    exit 0
+fi
+
+# Scaling four Kyverno controllers back up needs headroom. If the node is
+# already tight, kyverno_up times out and the run aborts mid-block.
+FREE_MB=$(free -m | awk '/^Mem:/{print $7}')
+if [ "${FREE_MB:-0}" -lt 1500 ]; then
+    err "Only ${FREE_MB}MB available memory. Free at least 1500MB before running."
+    err "Try: kubectl delete deployments --all -n dora-test; wsl.exe --shutdown (then reopen)"
+    exit 1
+fi
+info "Available memory: ${FREE_MB}MB"
+
+command -v argocd >/dev/null 2>&1 || { err "argocd CLI not found — required for the CA2 sync metric"; exit 1; }
+argocd app get "$ARGOCD_APP" >/dev/null 2>&1 || {
+    err "cannot reach ArgoCD app '$ARGOCD_APP'."
+    err "Run: kubectl port-forward svc/argocd-server -n argocd 8080:443 & then argocd login"; exit 1; }
+[ -f "$PROBE_BAD" ] || { err "missing probe manifest: $PROBE_BAD"; exit 1; }
+kubectl get validatingwebhookconfiguration "$GK_WH" >/dev/null 2>&1 || {
+    err "Gatekeeper webhook absent. Restore: kubectl apply -f $BACKUP"; exit 1; }
+
+echo "cycle_block,configuration,rep,order_in_block,argocd_sync_ms,admission_ms,webhook_delta_ms,load_before,load_after,quality_flag,timestamp" > "$OUTFILE"
 
 cat <<BANNER
 
 =============================================================
- DORA-as-Code — Phase 4 benchmark (randomised block design)
+ DORA-as-Code — Phase 4 benchmark (CA2-aligned, RCBD)
 =============================================================
- Blocks:            $BLOCKS
- Reps per block:    $REPS
- Observations/config: $((BLOCKS * REPS))
- Warm-up discarded: $WARMUP cycles
- ArgoCD app:        $ARGOCD_APP
- Output:            $OUTFILE
+ Primary metric:      ArgoCD sync duration (per CA2)
+ Blocks:              $BLOCKS
+ Reps per block:      $REPS
+ Cycles/config:       $((BLOCKS * REPS))   (CA2 specifies 50)
+ Baseline:            controllers scaled to 0 (true no-engine)
+ ArgoCD app:          $ARGOCD_APP
+ Output:              $(basename "$OUTFILE")
 =============================================================
 
 BANNER
 
-info "Warm-up: $WARMUP discarded cycles to settle page cache and K3s state"
-bash "$ISOLATE" baseline >/dev/null 2>&1 || true
+info "Warm-up: $WARMUP discarded sync cycles"
+apply_config baseline
 for i in $(seq 1 "$WARMUP"); do
-    measure_admission_ms >/dev/null
-    printf "\r  warm-up %d/%d" "$i" "$WARMUP"
+    measure_argocd_sync_ms >/dev/null
+    printf "\r    warm-up %d/%d" "$i" "$WARMUP"
 done
-echo ""
-log "Warm-up complete"
-echo ""
+echo ""; log "Warm-up complete"; echo ""
 
+ABORTED=0
 for block in $(seq 1 "$BLOCKS"); do
-    # Randomise configuration order independently within each block.
     ORDER=$(printf "baseline\nkyverno\ngatekeeper\n" | shuf)
     info "Block $block/$BLOCKS — order: $(echo "$ORDER" | tr '\n' ' ')"
-
     pos=0
-    while read -r config; do
-        [ -z "$config" ] && continue
+    while read -r cfg; do
+        [ -z "$cfg" ] && continue
         pos=$((pos + 1))
-
-        bash "$ISOLATE" "$config" >/dev/null 2>&1 || true
-        sleep 15   # let webhook registration settle before timing anything
-
-        for rep in $(seq 1 "$REPS"); do
-            run_cycle "$block" "$config" "$rep" "$pos"
-        done
+        apply_config "$cfg"
+        if ! verify_config "$cfg"; then
+            err "Aborting in block $block: '$cfg' did not isolate correctly."
+            err "Partial data in $OUTFILE is INCOMPLETE — do not analyse it."
+            ABORTED=1; break 2
+        fi
+        for rep in $(seq 1 "$REPS"); do run_cycle "$block" "$cfg" "$rep" "$pos"; done
         echo ""
     done <<< "$ORDER"
 done
 
 echo ""
-log "Benchmark complete: $OUTFILE"
-info "Restoring both engines..."
-bash "$ISOLATE" restore >/dev/null 2>&1 || true
-log "Engines restored"
+# The EXIT trap performs the restore; calling it here would duplicate the work.
+info "Run finished — exit trap will restore engines."
+echo ""
+echo "Webhook configs: $(kubectl get validatingwebhookconfigurations --no-headers 2>/dev/null | wc -l) (expect 8)"
+echo "Policy modes:"
+kubectl get clusterpolicies -o custom-columns='A:.spec.validationFailureAction' \
+    --no-headers 2>/dev/null | sort | uniq -c
+
+[ "$ABORTED" -eq 1 ] && { err "Run aborted — dataset unusable."; exit 1; }
 
 echo ""
-info "Next: python3 scripts/analyse-benchmarks.py --rcbd $OUTFILE"
+log "Benchmark complete: $OUTFILE"
+info "Rows: $(( $(wc -l < "$OUTFILE") - 1 ))"
+info "Next: python3 scripts/analyse-benchmarks.py --rcbd $OUTFILE --out results/analysis-rcbd"

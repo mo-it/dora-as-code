@@ -1,0 +1,5 @@
+cycle_block,configuration,rep,order_in_block,argocd_sync_ms,admission_ms,webhook_delta_ms,load_before,load_after,quality_flag,timestamp
+1,baseline,1,1,195725,195725,0,0.58,0.75,ok,2026-08-18T14:40:34+01:00
+1,baseline,2,1,214510,214510,0,0.75,1.24,ok,2026-08-18T14:44:09+01:00
+1,gatekeeper,1,2,198599,198599,0,2.10,1.01,ok,2026-08-18T14:48:24+01:00
+1,gatekeeper,2,2,197504,197504,0,1.01,1.41,ok,2026-08-18T14:51:42+01:00
