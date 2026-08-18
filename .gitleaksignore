@@ -1,0 +1,6 @@
+# Allowlisted: REQ-023 test fixtures for the violation-detection experiment.
+# Both contain base64 placeholders ("password123", "encrypted-value"), not
+# credentials. The non-compliant fixture MUST contain an unsealed Secret --
+# that is the condition the policy detects. Verified 18 Aug 2026.
+evidence/forensics/v1-manifests/compliant/req023-sealed-secret.yaml:generic-api-key:15
+evidence/forensics/v1-manifests/non-compliant/req023-plain-secret.yaml:generic-api-key:14
