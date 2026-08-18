@@ -1,0 +1,23 @@
+=== GATEKEEPER ONLY (Kyverno on Audit) ===
+DENIED   req001-violation
+DENIED   req002-violation
+DENIED   req005-violation
+DENIED   req006-violation
+DENIED   req007-violation
+DENIED   req009-violation
+DENIED   req010-violation
+DENIED   req011-violation
+DENIED   req012-violation
+DENIED   req013-violation
+DENIED   req015-violation
+DENIED   req017-violation
+DENIED   req018-violation
+DENIED   req019-violation
+DENIED   req020-violation
+ADMITTED req022-violation
+DENIED   req023b-violation
+DENIED   req024-violation
+DENIED   req025-violation
+DENIED   req027-violation
+DENIED   req028-violation
+gatekeeper false positives: 0 / 21

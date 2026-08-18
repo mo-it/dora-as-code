@@ -5,6 +5,7 @@ metadata:
   annotations:
     dora.article: "9(4)(a)"
     dora.requirement: "REQ-011"
+    dora.fix: "v2 - resolves pod spec for controller kinds; host* flags now read from resolved pod spec"
 spec:
   crd:
     spec:
@@ -15,8 +16,41 @@ spec:
       rego: |
         package doraprivileged
 
+        # ---------------------------------------------------------------------
+        # Pod-spec resolution helpers
+        # ---------------------------------------------------------------------
+        # Gatekeeper has no equivalent of Kyverno's autogen, so every template
+        # must resolve the pod spec itself. A bare Pod keeps its containers at
+        # spec.containers; controllers nest them under spec.template.spec; a
+        # CronJob nests them one level deeper again.
+        #
+        # These are PARTIAL SET rules on purpose. A body whose path does not
+        # exist contributes nothing rather than erroring, so exactly one body
+        # matches for any given object kind. Writing this as a complete rule
+        # (:=) would risk a multiple-output error.
+        #
+        # NOTE: initContainers are deliberately NOT covered, to preserve exact
+        # scope parity with the Kyverno pattern being compared against. This is
+        # a documented limitation, not an oversight.
+
+        pod_spec[s] {
+          input.review.object.kind == "Pod"
+          s := input.review.object.spec
+        }
+        pod_spec[s] {
+          s := input.review.object.spec.template.spec
+        }
+        pod_spec[s] {
+          s := input.review.object.spec.jobTemplate.spec.template.spec
+        }
+
+        containers[c] {
+          spec := pod_spec[_]
+          c := spec.containers[_]
+        }
+
         violation[{"msg": msg}] {
-          container := input.review.object.spec.containers[_]
+          container := containers[_]
           container.securityContext.privileged == true
           msg := sprintf(
             "DORA Art. 9(4)(a) violation [REQ-011]: Container '%s' runs in privileged mode. Container-to-host escape risk.",
@@ -24,17 +58,22 @@ spec:
           )
         }
 
+        # hostPID / hostNetwork / hostIPC are POD-SPEC fields, not container
+        # fields, so they read from pod_spec rather than containers.
         violation[{"msg": msg}] {
-          input.review.object.spec.hostPID == true
+          spec := pod_spec[_]
+          spec.hostPID == true
           msg := "DORA Art. 9(4)(a) violation [REQ-011]: hostPID is enabled. Process namespace sharing allows host process visibility."
         }
 
         violation[{"msg": msg}] {
-          input.review.object.spec.hostNetwork == true
+          spec := pod_spec[_]
+          spec.hostNetwork == true
           msg := "DORA Art. 9(4)(a) violation [REQ-011]: hostNetwork is enabled. Host network access bypasses network segmentation."
         }
 
         violation[{"msg": msg}] {
-          input.review.object.spec.hostIPC == true
+          spec := pod_spec[_]
+          spec.hostIPC == true
           msg := "DORA Art. 9(4)(a) violation [REQ-011]: hostIPC is enabled. Shared IPC namespace allows inter-process communication with host."
         }

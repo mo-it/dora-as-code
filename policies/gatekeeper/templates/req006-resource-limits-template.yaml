@@ -5,6 +5,7 @@ metadata:
   annotations:
     dora.article: "11(1)"
     dora.requirement: "REQ-006"
+    dora.fix: "v2 - resolves pod spec for controller kinds (was spec.containers only)"
 spec:
   crd:
     spec:
@@ -15,8 +16,41 @@ spec:
       rego: |
         package doraresourcelimits
 
+        # ---------------------------------------------------------------------
+        # Pod-spec resolution helpers
+        # ---------------------------------------------------------------------
+        # Gatekeeper has no equivalent of Kyverno's autogen, so every template
+        # must resolve the pod spec itself. A bare Pod keeps its containers at
+        # spec.containers; controllers nest them under spec.template.spec; a
+        # CronJob nests them one level deeper again.
+        #
+        # These are PARTIAL SET rules on purpose. A body whose path does not
+        # exist contributes nothing rather than erroring, so exactly one body
+        # matches for any given object kind. Writing this as a complete rule
+        # (:=) would risk a multiple-output error.
+        #
+        # NOTE: initContainers are deliberately NOT covered, to preserve exact
+        # scope parity with the Kyverno pattern being compared against. This is
+        # a documented limitation, not an oversight.
+
+        pod_spec[s] {
+          input.review.object.kind == "Pod"
+          s := input.review.object.spec
+        }
+        pod_spec[s] {
+          s := input.review.object.spec.template.spec
+        }
+        pod_spec[s] {
+          s := input.review.object.spec.jobTemplate.spec.template.spec
+        }
+
+        containers[c] {
+          spec := pod_spec[_]
+          c := spec.containers[_]
+        }
+
         violation[{"msg": msg}] {
-          container := input.review.object.spec.containers[_]
+          container := containers[_]
           not container.resources.requests.cpu
           msg := sprintf(
             "DORA Art. 11(1) violation [REQ-006]: Container '%s' missing resources.requests.cpu.",
@@ -25,7 +59,7 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          container := input.review.object.spec.containers[_]
+          container := containers[_]
           not container.resources.requests.memory
           msg := sprintf(
             "DORA Art. 11(1) violation [REQ-006]: Container '%s' missing resources.requests.memory.",
@@ -34,7 +68,7 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          container := input.review.object.spec.containers[_]
+          container := containers[_]
           not container.resources.limits.cpu
           msg := sprintf(
             "DORA Art. 11(1) violation [REQ-006]: Container '%s' missing resources.limits.cpu.",
@@ -43,7 +77,7 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          container := input.review.object.spec.containers[_]
+          container := containers[_]
           not container.resources.limits.memory
           msg := sprintf(
             "DORA Art. 11(1) violation [REQ-006]: Container '%s' missing resources.limits.memory.",

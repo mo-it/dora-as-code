@@ -1,0 +1,47 @@
+# =============================================================================
+# Benchmark-only ArgoCD Application
+# =============================================================================
+#
+# WHY THIS EXISTS
+# ---------------
+# `dora-test-workloads` points at `manifests/`, which contains BOTH the
+# compliant and the deliberately non-compliant manifests. That is correct for
+# the violation-detection experiment, but it is wrong for the latency
+# experiment:
+#
+#   * Baseline (no policy engine) admits all 32 manifests successfully.
+#   * Kyverno / Gatekeeper admit ~14 and reject ~18.
+#
+# The three configurations would therefore be doing different amounts of work,
+# and the sync-time difference would measure "how many objects got created",
+# not "what does admission validation cost". This app syncs only the compliant
+# set, so every configuration performs identical successful work and the only
+# remaining difference is the admission path itself.
+#
+# Café analogy: to time how long the health inspector adds to service, you send
+# through orders that all PASS inspection. If half the orders get rejected, you
+# are timing the arguments at the door, not the inspection.
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dora-bench-compliant
+  namespace: argocd
+  annotations:
+    dora.research/purpose: "Phase 4 latency benchmark — compliant manifests only"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mo-it/dora-as-code.git
+    targetRevision: HEAD
+    path: manifests/compliant
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dora-test
+  syncPolicy:
+    # Manual sync only. The benchmark harness triggers each sync explicitly and
+    # times it; automated sync would fire reconciliations mid-measurement.
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=false
+  # No automated block — sync is driven by `argocd app sync` in the harness.

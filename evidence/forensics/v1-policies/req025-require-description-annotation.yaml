@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art5-require-description
+  annotations:
+    dora.article: "5(2)(d)"
+    dora.requirement: "REQ-025"
+    dora.requirement-text: "Maintain documentation of ICT systems"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-description
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+                - Service
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 5(2)(d) violation [REQ-025]: Resources must have
+          annotation dora.io/description with a non-empty value
+          documenting the workload's purpose.
+        pattern:
+          metadata:
+            annotations:
+              dora.io/description: "?*"

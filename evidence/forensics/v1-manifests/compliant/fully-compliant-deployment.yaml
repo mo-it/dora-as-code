@@ -1,5 +1,4 @@
-# TEST: GOLD STANDARD — satisfies ALL 25 enforceable DORA policies
-# This is the positive control for Phase 4 validation.
+# TEST: GOLD STANDARD — satisfies ALL 25 DORA policies
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,23 +12,17 @@ metadata:
     dora.io/team: "platform-engineering"
     dora.io/criticality: "low"
   annotations:
-    # REQ-005: Kernel audit
     dora.io/kernel-audit-enabled: "true"
-    # REQ-015: Change management
     dora.io/change-id: "CHG-2026-001"
     dora.io/approved-by: "mark-lynch"
-    # REQ-017: Asset metadata
     dora.io/business-function: "compliance-testing"
     dora.io/data-classification: "internal"
     dora.io/asset-owner: "mohit-kumar"
-    # REQ-020: Logging
-    dora.io/logging-configured: "true"
-    # REQ-022: Image signature (Gatekeeper fallback)
-    dora.io/image-signature-verified: "true"
-    # REQ-025: Description
-    dora.io/description: "Gold-standard fully compliant DORA test workload"
-    # REQ-027: Dependencies
     dora.io/dependencies: "none"
+    dora.io/logging-configured: "true"
+    dora.io/image-signature-verified: "true"
+    dora.io/description: "Gold-standard fully compliant DORA test workload"
+    dora.io/pdb-configured: "true"
 spec:
   replicas: 1
   selector:
@@ -40,13 +33,13 @@ spec:
       labels:
         app: dora-compliant-app
     spec:
-      # REQ-019: Explicit ServiceAccount
       serviceAccountName: dora-test-sa
+      hostPID: false
+      hostNetwork: false
+      hostIPC: false
       containers:
         - name: compliant-container
-          # REQ-009: Pinned image tag (not :latest)
-          image: nginx:1.27
-          # REQ-006: Resource requests AND limits
+          image: nginx:1.27.0
           resources:
             requests:
               cpu: 100m
@@ -55,15 +48,12 @@ spec:
               cpu: 200m
               memory: 256Mi
           securityContext:
-            # REQ-010: Non-root + drop capabilities
             runAsNonRoot: true
             runAsUser: 1000
-            capabilities:
-              drop: ["ALL"]
-            # REQ-011: Not privileged
             privileged: false
-            # REQ-018: Filesystem hardening + seccomp
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
             seccompProfile:
               type: RuntimeDefault

@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art8-require-asset-metadata
+  annotations:
+    dora.article: "8(1)"
+    dora.requirement: "REQ-017"
+    dora.requirement-text: "Identify and document all ICT assets supporting business functions"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-asset-annotations
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 8(1) violation [REQ-017]: Workloads must have annotations:
+          dora.io/business-function, dora.io/data-classification, dora.io/asset-owner.
+        pattern:
+          metadata:
+            annotations:
+              dora.io/business-function: "?*"
+              dora.io/data-classification: "?*"
+              dora.io/asset-owner: "?*"

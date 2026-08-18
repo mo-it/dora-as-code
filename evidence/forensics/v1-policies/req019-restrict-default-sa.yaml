@@ -1,0 +1,39 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art9-restrict-default-sa
+  annotations:
+    dora.article: "9(4)(c)"
+    dora.requirement: "REQ-019"
+    dora.requirement-text: "Restrict access to ICT resources to authorised service accounts only"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: restrict-default-service-account
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 9(4)(c) violation [REQ-019]: Pods must not use the
+          default ServiceAccount. Assign an explicit ServiceAccount with
+          scoped RBAC permissions to reduce blast radius.
+        pattern:
+          spec:
+            serviceAccountName: "!default"

@@ -5,6 +5,7 @@ metadata:
   annotations:
     dora.article: "9(4)(c)"
     dora.requirement: "REQ-019"
+    dora.fix: "v2 - CRITICAL: previously read spec.serviceAccountName on controllers, which is always absent, producing a FALSE POSITIVE on every compliant Deployment"
 spec:
   crd:
     spec:
@@ -15,9 +16,49 @@ spec:
       rego: |
         package doradefaultsa
 
+        # ---------------------------------------------------------------------
+        # Pod-spec resolution helpers
+        # ---------------------------------------------------------------------
+        # Gatekeeper has no equivalent of Kyverno's autogen, so every template
+        # must resolve the pod spec itself. A bare Pod keeps its containers at
+        # spec.containers; controllers nest them under spec.template.spec; a
+        # CronJob nests them one level deeper again.
+        #
+        # These are PARTIAL SET rules on purpose. A body whose path does not
+        # exist contributes nothing rather than erroring, so exactly one body
+        # matches for any given object kind. Writing this as a complete rule
+        # (:=) would risk a multiple-output error.
+        #
+        # NOTE: initContainers are deliberately NOT covered, to preserve exact
+        # scope parity with the Kyverno pattern being compared against. This is
+        # a documented limitation, not an oversight.
+
+        pod_spec[s] {
+          input.review.object.kind == "Pod"
+          s := input.review.object.spec
+        }
+        pod_spec[s] {
+          s := input.review.object.spec.template.spec
+        }
+        pod_spec[s] {
+          s := input.review.object.spec.jobTemplate.spec.template.spec
+        }
+
+        containers[c] {
+          spec := pod_spec[_]
+          c := spec.containers[_]
+        }
+
+        # The v1 version of this rule negated a MISSING scalar. On a Deployment,
+        # spec.serviceAccountName does not exist, object.get returned the
+        # "default" fallback, and the rule fired on every controller regardless
+        # of the real value nested at spec.template.spec.serviceAccountName.
+        # That is the opposite failure mode to the container rules: a missing
+        # scalar under negation fires ALWAYS, a missing collection under
+        # iteration fires NEVER.
         violation[{"msg": msg}] {
-          # Check if serviceAccountName is "default" or not set
-          sa := object.get(input.review.object.spec, "serviceAccountName", "default")
+          spec := pod_spec[_]
+          sa := object.get(spec, "serviceAccountName", "default")
           sa == "default"
           msg := sprintf(
             "DORA Art. 9(4)(c) violation [REQ-019]: %s '%s' uses the default ServiceAccount. Assign an explicit ServiceAccount with scoped RBAC.",

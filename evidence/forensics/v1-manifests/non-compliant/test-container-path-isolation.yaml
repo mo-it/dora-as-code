@@ -1,0 +1,89 @@
+# =============================================================================
+# ISOLATION TEST: container-level policy enforcement on Deployment kinds
+# =============================================================================
+#
+# PURPOSE
+# -------
+# This manifest is identical to manifests/compliant/fully-compliant-deployment.yaml
+# in EVERY metadata field — all labels, all annotations. The ONLY difference is
+# the container securityContext, which is deliberately non-compliant:
+#
+#   runAsNonRoot: false        violates REQ-010 (DORA Art. 9(4)(a))
+#   runAsUser: 0               runs as root
+#   capabilities.drop removed  violates REQ-010
+#   privileged: true           violates REQ-011 (DORA Art. 9(4)(a))
+#   readOnlyRootFilesystem: false / allowPrivilegeEscalation: true
+#                              violates REQ-018
+#   image: nginx:latest        violates REQ-009
+#   resources removed          violates REQ-006
+#
+# Because every metadata policy is satisfied, the ONLY policies that can reject
+# this manifest are the container-level ones: req006, req009, req010, req011,
+# req018.
+#
+# EXPECTED RESULTS
+#   Kyverno     -> REJECT. Its `pattern` fails closed on the missing
+#                  spec.containers path, so it blocks (for the wrong reason,
+#                  but it blocks).
+#   Gatekeeper  -> ADMIT. `input.review.object.spec.containers[_]` binds
+#                  nothing on a Deployment, so no violation is generated.
+#                  Silent non-enforcement.
+#
+# If Gatekeeper admits this, a root-running privileged container with an
+# unpinned image and no resource limits entered the cluster with NO error,
+# NO warning and NO audit entry — while the engine reported healthy.
+#
+# Café analogy: the inspector is checking the paperwork taped to the delivery
+# crate and never opening the crate. Wrong address on the label gets caught.
+# Contaminated food inside does not.
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-container-path-isolation
+  namespace: dora-test
+  labels:
+    dora.test: "true"
+    dora.expected-result: "rejected-by-container-policies"
+    app: dora-isolation-test
+    dora.io/owner: "mohit-kumar"
+    dora.io/team: "platform-engineering"
+    dora.io/criticality: "low"
+  annotations:
+    # All metadata requirements satisfied — identical to the gold standard.
+    dora.io/kernel-audit-enabled: "true"
+    dora.io/change-id: "CHG-2026-002"
+    dora.io/approved-by: "mark-lynch"
+    dora.io/business-function: "compliance-testing"
+    dora.io/data-classification: "internal"
+    dora.io/asset-owner: "mohit-kumar"
+    dora.io/logging-configured: "true"
+    dora.io/image-signature-verified: "true"
+    dora.io/description: "Isolation test for container-level policy path handling on Deployments"
+    dora.io/dependencies: "none"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dora-isolation-test
+  template:
+    metadata:
+      labels:
+        app: dora-isolation-test
+    spec:
+      # REQ-019 satisfied: explicit ServiceAccount, not default.
+      serviceAccountName: dora-test-sa
+      containers:
+        - name: violating-container
+          # REQ-009 VIOLATION: mutable :latest tag
+          image: nginx:latest
+          # REQ-006 VIOLATION: no resources.requests or resources.limits
+          securityContext:
+            # REQ-010 VIOLATION: runs as root, no capability drop
+            runAsNonRoot: false
+            runAsUser: 0
+            # REQ-011 VIOLATION: privileged container (host escape vector)
+            privileged: true
+            # REQ-018 VIOLATION: writable root fs, escalation allowed, no seccomp
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: true

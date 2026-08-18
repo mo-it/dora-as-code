@@ -5,6 +5,7 @@ metadata:
   annotations:
     dora.article: "9(2)"
     dora.requirement: "REQ-009"
+    dora.fix: "v2 - resolves pod spec for controller kinds (was spec.containers only)"
 spec:
   crd:
     spec:
@@ -15,8 +16,41 @@ spec:
       rego: |
         package doraimagetag
 
+        # ---------------------------------------------------------------------
+        # Pod-spec resolution helpers
+        # ---------------------------------------------------------------------
+        # Gatekeeper has no equivalent of Kyverno's autogen, so every template
+        # must resolve the pod spec itself. A bare Pod keeps its containers at
+        # spec.containers; controllers nest them under spec.template.spec; a
+        # CronJob nests them one level deeper again.
+        #
+        # These are PARTIAL SET rules on purpose. A body whose path does not
+        # exist contributes nothing rather than erroring, so exactly one body
+        # matches for any given object kind. Writing this as a complete rule
+        # (:=) would risk a multiple-output error.
+        #
+        # NOTE: initContainers are deliberately NOT covered, to preserve exact
+        # scope parity with the Kyverno pattern being compared against. This is
+        # a documented limitation, not an oversight.
+
+        pod_spec[s] {
+          input.review.object.kind == "Pod"
+          s := input.review.object.spec
+        }
+        pod_spec[s] {
+          s := input.review.object.spec.template.spec
+        }
+        pod_spec[s] {
+          s := input.review.object.spec.jobTemplate.spec.template.spec
+        }
+
+        containers[c] {
+          spec := pod_spec[_]
+          c := spec.containers[_]
+        }
+
         violation[{"msg": msg}] {
-          container := input.review.object.spec.containers[_]
+          container := containers[_]
           endswith(container.image, ":latest")
           msg := sprintf(
             "DORA Art. 9(2) violation [REQ-009]: Container '%s' uses ':latest' tag. Use a specific version or digest for integrity.",
@@ -25,7 +59,7 @@ spec:
         }
 
         violation[{"msg": msg}] {
-          container := input.review.object.spec.containers[_]
+          container := containers[_]
           # Image has no tag (no colon) and no digest (no @)
           not contains(container.image, ":")
           not contains(container.image, "@")

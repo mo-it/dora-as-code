@@ -7,6 +7,11 @@ metadata:
     dora.requirement: "REQ-009"
     dora.requirement-text: "Ensure data integrity through immutable container images"
     dora.coverage: "fully-automatable"
+    # Match Pod only. Kyverno autogen derives the controller rules automatically,
+    # rewriting spec.* to spec.template.spec.* for each kind listed below.
+    # Listing controllers in match.kinds DISABLES autogen and applies the
+    # pod-level path literally to the controller object, where it does not exist.
+    pod-policies.kyverno.io/autogen-controllers: "Deployment,StatefulSet,DaemonSet,Job,CronJob"
 spec:
   validationFailureAction: Enforce
   background: true
@@ -17,9 +22,6 @@ spec:
           - resources:
               kinds:
                 - Pod
-                - Deployment
-                - StatefulSet
-                - DaemonSet
       exclude:
         any:
           - resources:
@@ -45,9 +47,6 @@ spec:
           - resources:
               kinds:
                 - Pod
-                - Deployment
-                - StatefulSet
-                - DaemonSet
       exclude:
         any:
           - resources:

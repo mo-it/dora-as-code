@@ -1,0 +1,67 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art9-require-image-tag
+  annotations:
+    dora.article: "9(2)"
+    dora.requirement: "REQ-009"
+    dora.requirement-text: "Ensure data integrity through immutable container images"
+    dora.coverage: "fully-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: block-latest-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 9(2) violation [REQ-009]: Container image must use a
+          specific version tag or digest, not 'latest'. Mutable tags
+          break deployment integrity and audit reproducibility.
+          Use: image:v1.2.3 or image@sha256:abc...
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+    - name: require-tag-present
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 9(2) violation [REQ-009]: Container image must include
+          a tag or digest. Untagged images default to 'latest'.
+        pattern:
+          spec:
+            containers:
+              - image: "*:*"

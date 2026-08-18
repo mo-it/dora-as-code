@@ -7,6 +7,7 @@ metadata:
     dora.requirement: "REQ-023b"
     dora.requirement-text: "Restrict container images to pre-approved registries"
     dora.coverage: "fully-automatable"
+    pod-policies.kyverno.io/autogen-controllers: "Deployment,StatefulSet,DaemonSet,Job,CronJob"
 spec:
   validationFailureAction: Enforce
   background: true
@@ -17,9 +18,6 @@ spec:
           - resources:
               kinds:
                 - Pod
-                - Deployment
-                - StatefulSet
-                - DaemonSet
       exclude:
         any:
           - resources:
@@ -35,15 +33,15 @@ spec:
           come from approved registries. Allowed: docker.io/library/*,
           ghcr.io/*, registry.k8s.io/*, quay.io/*.
           Blocked: unqualified images and unknown registries.
-        deny:
-          conditions:
-            all:
-              - key: "{{ request.object.spec.containers[].image }}"
-                operator: AnyNotIn
-                value:
-                  - "docker.io/library/*"
-                  - "ghcr.io/*"
-                  - "registry.k8s.io/*"
-                  - "quay.io/*"
-                  - "nginx:*"
-                  - "reg.kyverno.io/*"
+        pattern:
+          spec:
+            containers:
+              # Kyverno patterns treat "|" as OR, and autogen rewrites the
+              # spec.containers path for controller kinds. The previous version
+              # used a deny rule keyed on
+              #   {{ request.object.spec.containers[].image }}
+              # which autogen does NOT rewrite -- JMESPath strings are opaque to
+              # it -- so on a Deployment the expression resolved to nothing and
+              # the rule never denied. Expressing this as a pattern restores
+              # controller coverage.
+              - image: "docker.io/library/* | ghcr.io/* | registry.k8s.io/* | quay.io/* | nginx:* | reg.kyverno.io/*"

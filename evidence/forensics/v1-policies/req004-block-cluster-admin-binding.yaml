@@ -1,0 +1,34 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art9-block-cluster-admin-binding
+  annotations:
+    dora.article: "9(4)(b)"
+    dora.requirement: "REQ-004"
+    dora.requirement-text: "Prevent privilege escalation through RBAC bindings"
+    dora.coverage: "fully-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: block-cluster-admin-binding
+      match:
+        any:
+          - resources:
+              kinds:
+                - ClusterRoleBinding
+      validate:
+        message: >-
+          DORA Art. 9(4)(b) violation [REQ-004]: ClusterRoleBinding references
+          the cluster-admin ClusterRole. Direct cluster-admin bindings to
+          service accounts create single-point-of-compromise escalation risk.
+        deny:
+          conditions:
+            all:
+              - key: "{{ request.object.roleRef.name }}"
+                operator: Equals
+                value: "cluster-admin"
+              - key: "{{ request.object.subjects[].kind }}"
+                operator: AnyIn
+                value:
+                  - ServiceAccount

@@ -1,0 +1,47 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art11-require-pdb
+  annotations:
+    dora.article: "11(5)"
+    dora.requirement: "REQ-024"
+    dora.requirement-text: "Implement graceful degradation capabilities"
+    dora.coverage: "partially-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-pdb-for-critical
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              selector:
+                matchLabels:
+                  dora.io/criticality: "high"
+          - resources:
+              kinds:
+                - Deployment
+              selector:
+                matchLabels:
+                  dora.io/criticality: "medium"
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 11(5) violation [REQ-024]: Deployments with criticality
+          high or medium must declare a PodDisruptionBudget.
+          Add annotation dora.io/pdb-configured: "true" after creating
+          a matching PDB resource.
+        pattern:
+          metadata:
+            annotations:
+              dora.io/pdb-configured: "true"

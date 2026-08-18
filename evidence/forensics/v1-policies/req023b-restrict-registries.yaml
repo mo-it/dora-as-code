@@ -1,0 +1,49 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: dora-art15-restrict-registries
+  annotations:
+    dora.article: "15(1)"
+    dora.requirement: "REQ-023b"
+    dora.requirement-text: "Restrict container images to pre-approved registries"
+    dora.coverage: "fully-automatable"
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: restrict-image-registries
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kyverno
+                - gatekeeper-system
+                - argocd
+      validate:
+        message: >-
+          DORA Art. 15(1) violation [REQ-023b]: Container images must
+          come from approved registries. Allowed: docker.io/library/*,
+          ghcr.io/*, registry.k8s.io/*, quay.io/*.
+          Blocked: unqualified images and unknown registries.
+        deny:
+          conditions:
+            all:
+              - key: "{{ request.object.spec.containers[].image }}"
+                operator: AnyNotIn
+                value:
+                  - "docker.io/library/*"
+                  - "ghcr.io/*"
+                  - "registry.k8s.io/*"
+                  - "quay.io/*"
+                  - "nginx:*"
+                  - "reg.kyverno.io/*"

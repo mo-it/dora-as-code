@@ -1,0 +1,542 @@
+apiVersion: v1
+items:
+- apiVersion: admissionregistration.k8s.io/v1
+  kind: ValidatingWebhookConfiguration
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: gatekeeper
+      meta.helm.sh/release-namespace: gatekeeper-system
+    creationTimestamp: "2026-06-22T13:10:17Z"
+    generation: 2
+    labels:
+      app: gatekeeper
+      app.kubernetes.io/managed-by: Helm
+      chart: gatekeeper
+      gatekeeper.sh/system: "yes"
+      heritage: Helm
+      release: gatekeeper
+    name: gatekeeper-validating-webhook-configuration
+    resourceVersion: "1302"
+    uid: 233f2a80-3d4b-442d-a91b-77ba5e5487b0
+  webhooks:
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURNVENDQWhtZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREF0TVJNd0VRWURWUVFLRXdwbllYUmwKYTJWbGNHVnlNUll3RkFZRFZRUURFdzFuWVhSbGEyVmxjR1Z5TFdOaE1CNFhEVEkyTURZeU1qRXlNVEF5TlZvWApEVE0yTURZeE9URXpNVEF5TlZvd0xURVRNQkVHQTFVRUNoTUtaMkYwWld0bFpYQmxjakVXTUJRR0ExVUVBeE1OCloyRjBaV3RsWlhCbGNpMWpZVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFQQnEKUHlrYU8zb3RzZDVvQkRkeUhzRi9oTERQVXE4OFMyaXhiSmk0TzR3RzA1cXVEUlFUVEpXcWUzQ254aUdlcVVNSQovZzZkL0hqeFRjTXloMTJlWnB5SW52dzB3dm1GbEtxVEJBZVM4b2Y3Qys0bGI5T3ROZkw5RXFjSmpOcVRsYXJUCnZlNlFST1hlczdvdlp0NG5nTGFWZDJUeDYzRGx6a0lTZU5GNHo0bzdzOTVNV29VbE5jWUMwZ00zdzQwdDQzU1IKNzF0RWJPL0VvTVRqemFhREFUTXF3WE1wME9iYytrbXozbFJkVjJYdEpYdTcwTXRyOUpmSlRocTFmWGtsalJ1UgozQmdjckhFSUdLOEpOV0Q5YmdsK0ZjWHBWc2YxenpEV2RWcWhpdU9McENOWlNnY0R3cmJJV0VabHZIS0FsS0pGCm9Mc2FnRzVFNWZHakd6M2hvcWNDQXdFQUFhTmNNRm93RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHQTFVZEV3RUIKL3dRRk1BTUJBZjh3SFFZRFZSME9CQllFRk5WQ0liVk1mMDNISGNoN0RsUzRQTjFzd1dRUE1CZ0dBMVVkRVFRUgpNQStDRFdkaGRHVnJaV1Z3WlhJdFkyRXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBRDROaTF4bG5LWjkvbG1DCmV3WVNFUmVQS2U1aWFQVGM1U2x4US8wS3ZRVDdpL3Y3RzR3OG5YNFRYemhzRzNnM3dyTTdmVElGeDE1czNjYU0KSmtBQUY0a3NXajJMb1Q3OHJYUk0wUkdFaEdKaEpjOUF0NWk5cXI1SzVBYVBDVlZFZWZ6K1QrT0VtSGVyYTloSApjQlFKU0gvRVh2dkF0UWhYTmMyOUJlVzNQRno4L0h3VkRFZUg4MllkbGkxRFBDUVE3QngzZzVQZXZuZDdYVVFsCithckE4MmswR2g5azczZXduS1ZwbEh2KzlTcWtLeWFlV3paek5Jdk5URGlFNXg4akFISVI2OWdnWUJnRXR6VUEKbDR3UjFCWEJxV0pWd3hXK3Nua05YWSswL2tlUHlsZEZoUVE3SU42OC9rMlNhRWhVRXluUHVtSHg1Ymhyc1pzKwpWSlMwYzNVPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+      service:
+        name: gatekeeper-webhook-service
+        namespace: gatekeeper-system
+        path: /v1/admit
+        port: 443
+    failurePolicy: Ignore
+    matchPolicy: Exact
+    name: validation.gatekeeper.sh
+    namespaceSelector:
+      matchExpressions:
+      - key: admission.gatekeeper.sh/ignore
+        operator: DoesNotExist
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+        - gatekeeper-system
+    objectSelector: {}
+    rules:
+    - apiGroups:
+      - '*'
+      apiVersions:
+      - '*'
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - '*'
+      - pods/ephemeralcontainers
+      - pods/exec
+      - pods/log
+      - pods/eviction
+      - pods/portforward
+      - pods/proxy
+      - pods/attach
+      - pods/binding
+      - pods/resize
+      - deployments/scale
+      - replicasets/scale
+      - statefulsets/scale
+      - replicationcontrollers/scale
+      - services/proxy
+      - nodes/proxy
+      - services/status
+      scope: '*'
+    sideEffects: None
+    timeoutSeconds: 3
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURNVENDQWhtZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREF0TVJNd0VRWURWUVFLRXdwbllYUmwKYTJWbGNHVnlNUll3RkFZRFZRUURFdzFuWVhSbGEyVmxjR1Z5TFdOaE1CNFhEVEkyTURZeU1qRXlNVEF5TlZvWApEVE0yTURZeE9URXpNVEF5TlZvd0xURVRNQkVHQTFVRUNoTUtaMkYwWld0bFpYQmxjakVXTUJRR0ExVUVBeE1OCloyRjBaV3RsWlhCbGNpMWpZVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFQQnEKUHlrYU8zb3RzZDVvQkRkeUhzRi9oTERQVXE4OFMyaXhiSmk0TzR3RzA1cXVEUlFUVEpXcWUzQ254aUdlcVVNSQovZzZkL0hqeFRjTXloMTJlWnB5SW52dzB3dm1GbEtxVEJBZVM4b2Y3Qys0bGI5T3ROZkw5RXFjSmpOcVRsYXJUCnZlNlFST1hlczdvdlp0NG5nTGFWZDJUeDYzRGx6a0lTZU5GNHo0bzdzOTVNV29VbE5jWUMwZ00zdzQwdDQzU1IKNzF0RWJPL0VvTVRqemFhREFUTXF3WE1wME9iYytrbXozbFJkVjJYdEpYdTcwTXRyOUpmSlRocTFmWGtsalJ1UgozQmdjckhFSUdLOEpOV0Q5YmdsK0ZjWHBWc2YxenpEV2RWcWhpdU9McENOWlNnY0R3cmJJV0VabHZIS0FsS0pGCm9Mc2FnRzVFNWZHakd6M2hvcWNDQXdFQUFhTmNNRm93RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHQTFVZEV3RUIKL3dRRk1BTUJBZjh3SFFZRFZSME9CQllFRk5WQ0liVk1mMDNISGNoN0RsUzRQTjFzd1dRUE1CZ0dBMVVkRVFRUgpNQStDRFdkaGRHVnJaV1Z3WlhJdFkyRXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBRDROaTF4bG5LWjkvbG1DCmV3WVNFUmVQS2U1aWFQVGM1U2x4US8wS3ZRVDdpL3Y3RzR3OG5YNFRYemhzRzNnM3dyTTdmVElGeDE1czNjYU0KSmtBQUY0a3NXajJMb1Q3OHJYUk0wUkdFaEdKaEpjOUF0NWk5cXI1SzVBYVBDVlZFZWZ6K1QrT0VtSGVyYTloSApjQlFKU0gvRVh2dkF0UWhYTmMyOUJlVzNQRno4L0h3VkRFZUg4MllkbGkxRFBDUVE3QngzZzVQZXZuZDdYVVFsCithckE4MmswR2g5azczZXduS1ZwbEh2KzlTcWtLeWFlV3paek5Jdk5URGlFNXg4akFISVI2OWdnWUJnRXR6VUEKbDR3UjFCWEJxV0pWd3hXK3Nua05YWSswL2tlUHlsZEZoUVE3SU42OC9rMlNhRWhVRXluUHVtSHg1Ymhyc1pzKwpWSlMwYzNVPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+      service:
+        name: gatekeeper-webhook-service
+        namespace: gatekeeper-system
+        path: /v1/admitlabel
+        port: 443
+    failurePolicy: Fail
+    matchPolicy: Exact
+    name: check-ignore-label.gatekeeper.sh
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+        - gatekeeper-system
+    objectSelector: {}
+    rules:
+    - apiGroups:
+      - ""
+      apiVersions:
+      - '*'
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - namespaces
+      scope: '*'
+    sideEffects: None
+    timeoutSeconds: 3
+- apiVersion: admissionregistration.k8s.io/v1
+  kind: ValidatingWebhookConfiguration
+  metadata:
+    annotations:
+      admissions.enforcer/disabled: "true"
+    creationTimestamp: "2026-06-22T13:09:56Z"
+    generation: 1
+    labels:
+      webhook.kyverno.io/managed-by: kyverno
+    name: kyverno-cel-exception-validating-webhook-cfg
+    resourceVersion: "1003"
+    uid: 2aedf374-6b83-4568-b4aa-e3602368f061
+  webhooks:
+  - admissionReviewVersions:
+    - v1
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM3VENDQWRXZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFZTVJZd0ZBWURWUVFEREEwcUxtdDUKZG1WeWJtOHVjM1pqTUI0WERUSTJNRFl5TWpFeU1EazFObG9YRFRJM01EWXlNakV6TURrMU5sb3dHREVXTUJRRwpBMVVFQXd3TktpNXJlWFpsY201dkxuTjJZekNDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DCmdnRUJBTTBpclJ5ZzFNcHZzRzRESjdOekg1ZVFYeC9FSlgxYzBVUXJtd3VTUXNxSjMvY2JDMUpxb0FMbFdIS1EKNnk3Z2M5MEtCazVwTVlxaHFXKy9XTlY3dEczMzBxMlFwYk1rdy9Ra2N0TXgzZENNUHVieTd0MnB6a244eWtkNgovcXpmekd0SDF0K1hEQlovWDArdXVuU3lFOFBNK3BGbDBhZklNM29YN2toSmxpelk2eFgrOGd3TjZzR3V2eTc3CjNrOXp5R2QyelRHNUxaT2NyeUIyelZpRjdvVGErV0dKcGhXaFVOVnpyV1IvQXN5N280aVhtKzluNlJGb2x1aU0KazNuWmRDVGhZR3VIWHEwNll2ZUVJTjVxWEw1bEdJTThMYXp6djhGTllUdEpPcEE3ZVJJSzA5bG9LbTQ0ODV6RQpaNjRSZUVqUWdKaDJKNmdOSitTR2E5YlBtWVVDQXdFQUFhTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHCkExVWRFd0VCL3dRRk1BTUJBZjh3SFFZRFZSME9CQllFRkhrRWNsREFnUlY4VHhzc3BlbUpmcnhVQVdUQU1BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUNNeXZMUW5LVkhja1lEaVRjd29YNlVxeWhtNHV6eFJiMUtaR1pPbFBFTApaZnhEU0tlZGExY1JRTk1uUzk0VHB5ZG9wSWg0WDlRdmF4WEVqdXdRVmh6eUE4MS9JZzNYVkc5eUZudTRTQzNCCkVyYnNwMk8ycWJLclV1MTZIQlJvYklUeXVHZXVMdWxQR2UvN0lSZWlhNWlzeHhkeXhzSmx5WDRsdVAvOHNKNnkKa0NBZjFCS1MzL3pDVTQ3elJCVHRNM1Z2SHkrRXpQWFpkTkVuYURJaWIxSE92U0Qyb2xjUTZOT0xpRU5UMnpBUwpMcTlXSFlZL1lCNVI4TE10R3hJcHhuM2JDSzBLMWxmRGoyMG1lSmVvNk9BcGhrK2UzdEQvOFE2Nmx0U2ppMmtvCkNDUWdBZmJXZ2ltaWFmeWdhZkR2VGJoaStiTWsvdzhIT1Rva0FLQmo3dGY5Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      service:
+        name: kyverno-svc
+        namespace: kyverno
+        path: /celexception/validate
+        port: 443
+    failurePolicy: Fail
+    matchPolicy: Equivalent
+    name: kyverno-svc.kyverno.svc
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+    - apiGroups:
+      - policies.kyverno.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - policyexceptions
+      scope: '*'
+    sideEffects: None
+    timeoutSeconds: 10
+- apiVersion: admissionregistration.k8s.io/v1
+  kind: ValidatingWebhookConfiguration
+  metadata:
+    annotations:
+      admissions.enforcer/disabled: "true"
+    creationTimestamp: "2026-06-22T13:09:50Z"
+    generation: 1
+    labels:
+      webhook.kyverno.io/managed-by: kyverno
+    name: kyverno-cleanup-validating-webhook-cfg
+    resourceVersion: "973"
+    uid: dd312292-a0a6-4e82-b123-03787e63e3aa
+  webhooks:
+  - admissionReviewVersions:
+    - v1
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM3VENDQWRXZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFZTVJZd0ZBWURWUVFEREEwcUxtdDUKZG1WeWJtOHVjM1pqTUI0WERUSTJNRFl5TWpFeU1EazFNRm9YRFRJM01EWXlNakV6TURrMU1Gb3dHREVXTUJRRwpBMVVFQXd3TktpNXJlWFpsY201dkxuTjJZekNDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DCmdnRUJBTHZRaEJrUGsxOGVpV3ViY2wvVVlCNjFyZGo2NUdUKzgxZSttK3Zvem50Ky91WUhSeVlHek9PZWowci8KWnpyS2FRTW1qQ013RUZ5MkhXZmJrK0JCSlRYUG9XdjU2MVdqNXRMOHBlY3dxTkUvUXFjTVJPd01mQ0pUV0lDZgpvb3RnWHFNR21LUElGRGloTzNxUWpKZEZldEdlZDE1UjBWcktIeTNmdjltMG5BSk8xUTRLSXh6ZXhMcHRiYkVPCmkxNXpheWNYczdxZ3ZFZlZJbUJjTHJlZkdESmhqYWgrVUZTSjNtckVUeVJDcDF1Y3Zmc1p3S28yb3o1MUJHdzEKQ3dzNGpKd3lRUEZvT0JFazVvMExWalpFYWFRUUI5VUk0eCtuY1FwQS84MG5YN2JScDJUTFBYQ0RzWVgyUEp4dQpzalk3d2p3L3lwVmV3SjcxUDVqdnJRa2M4QTBDQXdFQUFhTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHCkExVWRFd0VCL3dRRk1BTUJBZjh3SFFZRFZSME9CQllFRk40TlYyVXBRVzRENS84NVFyTTBaTW1oN0hPUU1BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJ2R2FZMCsxdkJETkZJTkV4VWpnd2tCS1lsc25MaXhDT0pmWkhHSHROYQpCSXdHQzdnMmRMd3IvMzBkdzIxeDBzQ2tCSUxFaVE0WkwrM1l5QnBnVHN0RWYrd3VvUG9TcG1PaVlMN2tyRzlzCkEyQldPTTByRUJZR21Da3BNRlNReENFaGhBL093eDhLZ0JCcGoveWVrS1NkNHlNR0g5Yk9zcDN0UFBnbUJ2bUkKVnZOVWZhRkZYZ2ZSQVpMUGlhSUFQTVFVMEFyUjVzdiswZk5MalNWZTEwcnhwbCtVQVphWTRMTGJ6NzQ3S0g2YQpyZ1dNSW9ZMUl3MzE1aVBBWnRNeFVBZzNMc3pFQUc0YkYzaE5wL3JhQjY2UE5WekJJY3libDVMemFoRmZjdVpHCjRsUmlwVEhvdEFkU05STzVQSFlYL3h5N3RjbloxWEZnK3JRbUxtaTNKaHNJCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      service:
+        name: kyverno-cleanup-controller
+        namespace: kyverno
+        path: /validate
+        port: 443
+    failurePolicy: Fail
+    matchPolicy: Equivalent
+    name: kyverno-cleanup-controller.kyverno.svc
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+    - apiGroups:
+      - kyverno.io
+      apiVersions:
+      - v2beta1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - cleanuppolicies/*
+      - clustercleanuppolicies/*
+      scope: '*'
+    sideEffects: None
+    timeoutSeconds: 10
+- apiVersion: admissionregistration.k8s.io/v1
+  kind: ValidatingWebhookConfiguration
+  metadata:
+    annotations:
+      admissions.enforcer/disabled: "true"
+    creationTimestamp: "2026-06-22T13:09:56Z"
+    generation: 1
+    labels:
+      webhook.kyverno.io/managed-by: kyverno
+    name: kyverno-exception-validating-webhook-cfg
+    resourceVersion: "1004"
+    uid: 7c6df08c-b6e1-4329-8d85-cbc4d24ae3f2
+  webhooks:
+  - admissionReviewVersions:
+    - v1
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM3VENDQWRXZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFZTVJZd0ZBWURWUVFEREEwcUxtdDUKZG1WeWJtOHVjM1pqTUI0WERUSTJNRFl5TWpFeU1EazFObG9YRFRJM01EWXlNakV6TURrMU5sb3dHREVXTUJRRwpBMVVFQXd3TktpNXJlWFpsY201dkxuTjJZekNDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DCmdnRUJBTTBpclJ5ZzFNcHZzRzRESjdOekg1ZVFYeC9FSlgxYzBVUXJtd3VTUXNxSjMvY2JDMUpxb0FMbFdIS1EKNnk3Z2M5MEtCazVwTVlxaHFXKy9XTlY3dEczMzBxMlFwYk1rdy9Ra2N0TXgzZENNUHVieTd0MnB6a244eWtkNgovcXpmekd0SDF0K1hEQlovWDArdXVuU3lFOFBNK3BGbDBhZklNM29YN2toSmxpelk2eFgrOGd3TjZzR3V2eTc3CjNrOXp5R2QyelRHNUxaT2NyeUIyelZpRjdvVGErV0dKcGhXaFVOVnpyV1IvQXN5N280aVhtKzluNlJGb2x1aU0KazNuWmRDVGhZR3VIWHEwNll2ZUVJTjVxWEw1bEdJTThMYXp6djhGTllUdEpPcEE3ZVJJSzA5bG9LbTQ0ODV6RQpaNjRSZUVqUWdKaDJKNmdOSitTR2E5YlBtWVVDQXdFQUFhTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHCkExVWRFd0VCL3dRRk1BTUJBZjh3SFFZRFZSME9CQllFRkhrRWNsREFnUlY4VHhzc3BlbUpmcnhVQVdUQU1BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUNNeXZMUW5LVkhja1lEaVRjd29YNlVxeWhtNHV6eFJiMUtaR1pPbFBFTApaZnhEU0tlZGExY1JRTk1uUzk0VHB5ZG9wSWg0WDlRdmF4WEVqdXdRVmh6eUE4MS9JZzNYVkc5eUZudTRTQzNCCkVyYnNwMk8ycWJLclV1MTZIQlJvYklUeXVHZXVMdWxQR2UvN0lSZWlhNWlzeHhkeXhzSmx5WDRsdVAvOHNKNnkKa0NBZjFCS1MzL3pDVTQ3elJCVHRNM1Z2SHkrRXpQWFpkTkVuYURJaWIxSE92U0Qyb2xjUTZOT0xpRU5UMnpBUwpMcTlXSFlZL1lCNVI4TE10R3hJcHhuM2JDSzBLMWxmRGoyMG1lSmVvNk9BcGhrK2UzdEQvOFE2Nmx0U2ppMmtvCkNDUWdBZmJXZ2ltaWFmeWdhZkR2VGJoaStiTWsvdzhIT1Rva0FLQmo3dGY5Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      service:
+        name: kyverno-svc
+        namespace: kyverno
+        path: /exceptionvalidate
+        port: 443
+    failurePolicy: Fail
+    matchPolicy: Equivalent
+    name: kyverno-svc.kyverno.svc
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+    - apiGroups:
+      - kyverno.io
+      apiVersions:
+      - v2alpha1
+      - v2beta1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - policyexceptions
+      scope: '*'
+    sideEffects: None
+    timeoutSeconds: 10
+- apiVersion: admissionregistration.k8s.io/v1
+  kind: ValidatingWebhookConfiguration
+  metadata:
+    annotations:
+      admissions.enforcer/disabled: "true"
+    creationTimestamp: "2026-06-22T13:09:56Z"
+    generation: 1
+    labels:
+      webhook.kyverno.io/managed-by: kyverno
+    name: kyverno-global-context-validating-webhook-cfg
+    resourceVersion: "1007"
+    uid: b6f6dc00-3286-4251-ac1e-788893829b3e
+  webhooks:
+  - admissionReviewVersions:
+    - v1
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM3VENDQWRXZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFZTVJZd0ZBWURWUVFEREEwcUxtdDUKZG1WeWJtOHVjM1pqTUI0WERUSTJNRFl5TWpFeU1EazFObG9YRFRJM01EWXlNakV6TURrMU5sb3dHREVXTUJRRwpBMVVFQXd3TktpNXJlWFpsY201dkxuTjJZekNDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DCmdnRUJBTTBpclJ5ZzFNcHZzRzRESjdOekg1ZVFYeC9FSlgxYzBVUXJtd3VTUXNxSjMvY2JDMUpxb0FMbFdIS1EKNnk3Z2M5MEtCazVwTVlxaHFXKy9XTlY3dEczMzBxMlFwYk1rdy9Ra2N0TXgzZENNUHVieTd0MnB6a244eWtkNgovcXpmekd0SDF0K1hEQlovWDArdXVuU3lFOFBNK3BGbDBhZklNM29YN2toSmxpelk2eFgrOGd3TjZzR3V2eTc3CjNrOXp5R2QyelRHNUxaT2NyeUIyelZpRjdvVGErV0dKcGhXaFVOVnpyV1IvQXN5N280aVhtKzluNlJGb2x1aU0KazNuWmRDVGhZR3VIWHEwNll2ZUVJTjVxWEw1bEdJTThMYXp6djhGTllUdEpPcEE3ZVJJSzA5bG9LbTQ0ODV6RQpaNjRSZUVqUWdKaDJKNmdOSitTR2E5YlBtWVVDQXdFQUFhTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHCkExVWRFd0VCL3dRRk1BTUJBZjh3SFFZRFZSME9CQllFRkhrRWNsREFnUlY4VHhzc3BlbUpmcnhVQVdUQU1BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUNNeXZMUW5LVkhja1lEaVRjd29YNlVxeWhtNHV6eFJiMUtaR1pPbFBFTApaZnhEU0tlZGExY1JRTk1uUzk0VHB5ZG9wSWg0WDlRdmF4WEVqdXdRVmh6eUE4MS9JZzNYVkc5eUZudTRTQzNCCkVyYnNwMk8ycWJLclV1MTZIQlJvYklUeXVHZXVMdWxQR2UvN0lSZWlhNWlzeHhkeXhzSmx5WDRsdVAvOHNKNnkKa0NBZjFCS1MzL3pDVTQ3elJCVHRNM1Z2SHkrRXpQWFpkTkVuYURJaWIxSE92U0Qyb2xjUTZOT0xpRU5UMnpBUwpMcTlXSFlZL1lCNVI4TE10R3hJcHhuM2JDSzBLMWxmRGoyMG1lSmVvNk9BcGhrK2UzdEQvOFE2Nmx0U2ppMmtvCkNDUWdBZmJXZ2ltaWFmeWdhZkR2VGJoaStiTWsvdzhIT1Rva0FLQmo3dGY5Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      service:
+        name: kyverno-svc
+        namespace: kyverno
+        path: /globalcontextvalidate
+        port: 443
+    failurePolicy: Fail
+    matchPolicy: Equivalent
+    name: kyverno-svc.kyverno.svc
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+    - apiGroups:
+      - kyverno.io
+      apiVersions:
+      - v2alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - globalcontextentries
+      scope: '*'
+    sideEffects: None
+    timeoutSeconds: 10
+- apiVersion: admissionregistration.k8s.io/v1
+  kind: ValidatingWebhookConfiguration
+  metadata:
+    annotations:
+      admissions.enforcer/disabled: "true"
+    creationTimestamp: "2026-06-22T13:09:56Z"
+    generation: 1
+    labels:
+      webhook.kyverno.io/managed-by: kyverno
+    name: kyverno-policy-validating-webhook-cfg
+    resourceVersion: "1005"
+    uid: d5b9a22e-7643-4f44-8de8-2d1be2b23bd5
+  webhooks:
+  - admissionReviewVersions:
+    - v1
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM3VENDQWRXZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFZTVJZd0ZBWURWUVFEREEwcUxtdDUKZG1WeWJtOHVjM1pqTUI0WERUSTJNRFl5TWpFeU1EazFObG9YRFRJM01EWXlNakV6TURrMU5sb3dHREVXTUJRRwpBMVVFQXd3TktpNXJlWFpsY201dkxuTjJZekNDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DCmdnRUJBTTBpclJ5ZzFNcHZzRzRESjdOekg1ZVFYeC9FSlgxYzBVUXJtd3VTUXNxSjMvY2JDMUpxb0FMbFdIS1EKNnk3Z2M5MEtCazVwTVlxaHFXKy9XTlY3dEczMzBxMlFwYk1rdy9Ra2N0TXgzZENNUHVieTd0MnB6a244eWtkNgovcXpmekd0SDF0K1hEQlovWDArdXVuU3lFOFBNK3BGbDBhZklNM29YN2toSmxpelk2eFgrOGd3TjZzR3V2eTc3CjNrOXp5R2QyelRHNUxaT2NyeUIyelZpRjdvVGErV0dKcGhXaFVOVnpyV1IvQXN5N280aVhtKzluNlJGb2x1aU0KazNuWmRDVGhZR3VIWHEwNll2ZUVJTjVxWEw1bEdJTThMYXp6djhGTllUdEpPcEE3ZVJJSzA5bG9LbTQ0ODV6RQpaNjRSZUVqUWdKaDJKNmdOSitTR2E5YlBtWVVDQXdFQUFhTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHCkExVWRFd0VCL3dRRk1BTUJBZjh3SFFZRFZSME9CQllFRkhrRWNsREFnUlY4VHhzc3BlbUpmcnhVQVdUQU1BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUNNeXZMUW5LVkhja1lEaVRjd29YNlVxeWhtNHV6eFJiMUtaR1pPbFBFTApaZnhEU0tlZGExY1JRTk1uUzk0VHB5ZG9wSWg0WDlRdmF4WEVqdXdRVmh6eUE4MS9JZzNYVkc5eUZudTRTQzNCCkVyYnNwMk8ycWJLclV1MTZIQlJvYklUeXVHZXVMdWxQR2UvN0lSZWlhNWlzeHhkeXhzSmx5WDRsdVAvOHNKNnkKa0NBZjFCS1MzL3pDVTQ3elJCVHRNM1Z2SHkrRXpQWFpkTkVuYURJaWIxSE92U0Qyb2xjUTZOT0xpRU5UMnpBUwpMcTlXSFlZL1lCNVI4TE10R3hJcHhuM2JDSzBLMWxmRGoyMG1lSmVvNk9BcGhrK2UzdEQvOFE2Nmx0U2ppMmtvCkNDUWdBZmJXZ2ltaWFmeWdhZkR2VGJoaStiTWsvdzhIT1Rva0FLQmo3dGY5Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      service:
+        name: kyverno-svc
+        namespace: kyverno
+        path: /policyvalidate
+        port: 443
+    failurePolicy: Fail
+    matchPolicy: Equivalent
+    name: validate-policy.kyverno.svc
+    namespaceSelector: {}
+    objectSelector: {}
+    rules:
+    - apiGroups:
+      - kyverno.io
+      apiVersions:
+      - v1
+      - v2beta1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - clusterpolicies
+      - policies
+      scope: '*'
+    - apiGroups:
+      - policies.kyverno.io
+      apiVersions:
+      - v1alpha1
+      - v1beta1
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - validatingpolicies
+      scope: '*'
+    - apiGroups:
+      - policies.kyverno.io
+      apiVersions:
+      - v1beta1
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - namespacedvalidatingpolicies
+      scope: '*'
+    - apiGroups:
+      - policies.kyverno.io
+      apiVersions:
+      - v1alpha1
+      - v1beta1
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - imagevalidatingpolicies
+      scope: '*'
+    - apiGroups:
+      - policies.kyverno.io
+      apiVersions:
+      - v1beta1
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - namespacedimagevalidatingpolicies
+      scope: '*'
+    - apiGroups:
+      - policies.kyverno.io
+      apiVersions:
+      - v1alpha1
+      - v1beta1
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - generatingpolicies
+      scope: '*'
+    - apiGroups:
+      - policies.kyverno.io
+      apiVersions:
+      - v1beta1
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - namespacedgeneratingpolicies
+      scope: '*'
+    - apiGroups:
+      - policies.kyverno.io
+      apiVersions:
+      - v1alpha1
+      - v1beta1
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - deletingpolicies
+      scope: '*'
+    sideEffects: None
+    timeoutSeconds: 10
+- apiVersion: admissionregistration.k8s.io/v1
+  kind: ValidatingWebhookConfiguration
+  metadata:
+    annotations:
+      admissions.enforcer/disabled: "true"
+    creationTimestamp: "2026-06-22T13:09:56Z"
+    generation: 233
+    labels:
+      webhook.kyverno.io/managed-by: kyverno
+    name: kyverno-resource-validating-webhook-cfg
+    resourceVersion: "1626060"
+    uid: 47285704-17c1-4d7d-bf65-b2b71b8bbadd
+  webhooks:
+  - admissionReviewVersions:
+    - v1
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM3VENDQWRXZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFZTVJZd0ZBWURWUVFEREEwcUxtdDUKZG1WeWJtOHVjM1pqTUI0WERUSTJNRFl5TWpFeU1EazFObG9YRFRJM01EWXlNakV6TURrMU5sb3dHREVXTUJRRwpBMVVFQXd3TktpNXJlWFpsY201dkxuTjJZekNDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DCmdnRUJBTTBpclJ5ZzFNcHZzRzRESjdOekg1ZVFYeC9FSlgxYzBVUXJtd3VTUXNxSjMvY2JDMUpxb0FMbFdIS1EKNnk3Z2M5MEtCazVwTVlxaHFXKy9XTlY3dEczMzBxMlFwYk1rdy9Ra2N0TXgzZENNUHVieTd0MnB6a244eWtkNgovcXpmekd0SDF0K1hEQlovWDArdXVuU3lFOFBNK3BGbDBhZklNM29YN2toSmxpelk2eFgrOGd3TjZzR3V2eTc3CjNrOXp5R2QyelRHNUxaT2NyeUIyelZpRjdvVGErV0dKcGhXaFVOVnpyV1IvQXN5N280aVhtKzluNlJGb2x1aU0KazNuWmRDVGhZR3VIWHEwNll2ZUVJTjVxWEw1bEdJTThMYXp6djhGTllUdEpPcEE3ZVJJSzA5bG9LbTQ0ODV6RQpaNjRSZUVqUWdKaDJKNmdOSitTR2E5YlBtWVVDQXdFQUFhTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHCkExVWRFd0VCL3dRRk1BTUJBZjh3SFFZRFZSME9CQllFRkhrRWNsREFnUlY4VHhzc3BlbUpmcnhVQVdUQU1BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUNNeXZMUW5LVkhja1lEaVRjd29YNlVxeWhtNHV6eFJiMUtaR1pPbFBFTApaZnhEU0tlZGExY1JRTk1uUzk0VHB5ZG9wSWg0WDlRdmF4WEVqdXdRVmh6eUE4MS9JZzNYVkc5eUZudTRTQzNCCkVyYnNwMk8ycWJLclV1MTZIQlJvYklUeXVHZXVMdWxQR2UvN0lSZWlhNWlzeHhkeXhzSmx5WDRsdVAvOHNKNnkKa0NBZjFCS1MzL3pDVTQ3elJCVHRNM1Z2SHkrRXpQWFpkTkVuYURJaWIxSE92U0Qyb2xjUTZOT0xpRU5UMnpBUwpMcTlXSFlZL1lCNVI4TE10R3hJcHhuM2JDSzBLMWxmRGoyMG1lSmVvNk9BcGhrK2UzdEQvOFE2Nmx0U2ppMmtvCkNDUWdBZmJXZ2ltaWFmeWdhZkR2VGJoaStiTWsvdzhIT1Rva0FLQmo3dGY5Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      service:
+        name: kyverno-svc
+        namespace: kyverno
+        path: /validate/fail
+        port: 443
+    failurePolicy: Fail
+    matchPolicy: Equivalent
+    name: validate.kyverno.svc-fail
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+        - kube-system
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+        - kyverno
+    objectSelector: {}
+    rules:
+    - apiGroups:
+      - ""
+      apiVersions:
+      - v1
+      operations:
+      - CONNECT
+      - CREATE
+      - DELETE
+      - UPDATE
+      resources:
+      - namespaces
+      scope: '*'
+    - apiGroups:
+      - ""
+      apiVersions:
+      - v1
+      operations:
+      - CONNECT
+      - CREATE
+      - DELETE
+      - UPDATE
+      resources:
+      - persistentvolumeclaims
+      - pods
+      - pods/ephemeralcontainers
+      - secrets
+      - services
+      scope: Namespaced
+    - apiGroups:
+      - apps
+      apiVersions:
+      - v1
+      operations:
+      - CONNECT
+      - CREATE
+      - DELETE
+      - UPDATE
+      resources:
+      - daemonsets
+      - deployments
+      - statefulsets
+      scope: Namespaced
+    - apiGroups:
+      - networking.k8s.io
+      apiVersions:
+      - v1
+      operations:
+      - CONNECT
+      - CREATE
+      - DELETE
+      - UPDATE
+      resources:
+      - ingresses
+      scope: Namespaced
+    - apiGroups:
+      - rbac.authorization.k8s.io
+      apiVersions:
+      - v1
+      operations:
+      - CONNECT
+      - CREATE
+      - DELETE
+      - UPDATE
+      resources:
+      - clusterrolebindings
+      - clusterroles
+      scope: '*'
+    sideEffects: NoneOnDryRun
+    timeoutSeconds: 10
+- apiVersion: admissionregistration.k8s.io/v1
+  kind: ValidatingWebhookConfiguration
+  metadata:
+    annotations:
+      admissions.enforcer/disabled: "true"
+    creationTimestamp: "2026-06-22T13:09:50Z"
+    generation: 1
+    labels:
+      webhook.kyverno.io/managed-by: kyverno
+    name: kyverno-ttl-validating-webhook-cfg
+    resourceVersion: "972"
+    uid: dbe553c4-8854-4f2d-a1f5-24591ded207e
+  webhooks:
+  - admissionReviewVersions:
+    - v1
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM3VENDQWRXZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFZTVJZd0ZBWURWUVFEREEwcUxtdDUKZG1WeWJtOHVjM1pqTUI0WERUSTJNRFl5TWpFeU1EazFNRm9YRFRJM01EWXlNakV6TURrMU1Gb3dHREVXTUJRRwpBMVVFQXd3TktpNXJlWFpsY201dkxuTjJZekNDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DCmdnRUJBTHZRaEJrUGsxOGVpV3ViY2wvVVlCNjFyZGo2NUdUKzgxZSttK3Zvem50Ky91WUhSeVlHek9PZWowci8KWnpyS2FRTW1qQ013RUZ5MkhXZmJrK0JCSlRYUG9XdjU2MVdqNXRMOHBlY3dxTkUvUXFjTVJPd01mQ0pUV0lDZgpvb3RnWHFNR21LUElGRGloTzNxUWpKZEZldEdlZDE1UjBWcktIeTNmdjltMG5BSk8xUTRLSXh6ZXhMcHRiYkVPCmkxNXpheWNYczdxZ3ZFZlZJbUJjTHJlZkdESmhqYWgrVUZTSjNtckVUeVJDcDF1Y3Zmc1p3S28yb3o1MUJHdzEKQ3dzNGpKd3lRUEZvT0JFazVvMExWalpFYWFRUUI5VUk0eCtuY1FwQS84MG5YN2JScDJUTFBYQ0RzWVgyUEp4dQpzalk3d2p3L3lwVmV3SjcxUDVqdnJRa2M4QTBDQXdFQUFhTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHCkExVWRFd0VCL3dRRk1BTUJBZjh3SFFZRFZSME9CQllFRk40TlYyVXBRVzRENS84NVFyTTBaTW1oN0hPUU1BMEcKQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJ2R2FZMCsxdkJETkZJTkV4VWpnd2tCS1lsc25MaXhDT0pmWkhHSHROYQpCSXdHQzdnMmRMd3IvMzBkdzIxeDBzQ2tCSUxFaVE0WkwrM1l5QnBnVHN0RWYrd3VvUG9TcG1PaVlMN2tyRzlzCkEyQldPTTByRUJZR21Da3BNRlNReENFaGhBL093eDhLZ0JCcGoveWVrS1NkNHlNR0g5Yk9zcDN0UFBnbUJ2bUkKVnZOVWZhRkZYZ2ZSQVpMUGlhSUFQTVFVMEFyUjVzdiswZk5MalNWZTEwcnhwbCtVQVphWTRMTGJ6NzQ3S0g2YQpyZ1dNSW9ZMUl3MzE1aVBBWnRNeFVBZzNMc3pFQUc0YkYzaE5wL3JhQjY2UE5WekJJY3libDVMemFoRmZjdVpHCjRsUmlwVEhvdEFkU05STzVQSFlYL3h5N3RjbloxWEZnK3JRbUxtaTNKaHNJCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      service:
+        name: kyverno-cleanup-controller
+        namespace: kyverno
+        path: /verifyttl
+        port: 443
+    failurePolicy: Ignore
+    matchPolicy: Equivalent
+    name: kyverno-cleanup-controller.kyverno.svc
+    namespaceSelector: {}
+    objectSelector:
+      matchExpressions:
+      - key: cleanup.kyverno.io/ttl
+        operator: Exists
+    rules:
+    - apiGroups:
+      - '*'
+      apiVersions:
+      - '*'
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - '*'
+      scope: '*'
+    sideEffects: None
+    timeoutSeconds: 10
+kind: List
+metadata:
+  resourceVersion: ""

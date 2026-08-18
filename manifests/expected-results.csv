@@ -1,0 +1,43 @@
+requirement,dora_article,variant,manifest,expected_decision,expected_violations,deviation,expected_enforcement
+REQ-005,Art. 10(1),compliant,compliant/req005-compliant.yaml,allow,0,none,enforce
+REQ-005,Art. 10(1),non-compliant,non-compliant/req005-violation.yaml,deny,1,kernel audit annotation absent,enforce
+REQ-006,Art. 11(1),compliant,compliant/req006-compliant.yaml,allow,0,none,enforce
+REQ-006,Art. 11(1),non-compliant,non-compliant/req006-violation.yaml,deny,1,no resource requests or limits,enforce
+REQ-007,Art. 11(1),compliant,compliant/req007-compliant.yaml,allow,0,none,enforce
+REQ-007,Art. 11(1),non-compliant,non-compliant/req007-violation.yaml,deny,1,criticality high with a single replica,enforce
+REQ-009,Art. 9(2),compliant,compliant/req009-compliant.yaml,allow,0,none,enforce
+REQ-009,Art. 9(2),non-compliant,non-compliant/req009-violation.yaml,deny,1,mutable :latest image tag,enforce
+REQ-010,Art. 9(4)(a),compliant,compliant/req010-compliant.yaml,allow,0,none,enforce
+REQ-010,Art. 9(4)(a),non-compliant,non-compliant/req010-violation.yaml,deny,1,"runs as root, no capability drop",enforce
+REQ-011,Art. 9(4)(a),compliant,compliant/req011-compliant.yaml,allow,0,none,enforce
+REQ-011,Art. 9(4)(a),non-compliant,non-compliant/req011-violation.yaml,deny,1,privileged container,enforce
+REQ-012,Art. 5(2)(a),compliant,compliant/req012-compliant.yaml,allow,0,none,enforce
+REQ-012,Art. 5(2)(a),non-compliant,non-compliant/req012-violation.yaml,deny,1,inventory labels absent,enforce
+REQ-013,Art. 6(1)(b),compliant,compliant/req013-compliant.yaml,allow,0,none,enforce
+REQ-013,Art. 6(1)(b),non-compliant,non-compliant/req013-violation.yaml,deny,1,criticality label absent,enforce
+REQ-015,Art. 13(1),compliant,compliant/req015-compliant.yaml,allow,0,none,enforce
+REQ-015,Art. 13(1),non-compliant,non-compliant/req015-violation.yaml,deny,1,change-management annotations absent,enforce
+REQ-017,Art. 8(1),compliant,compliant/req017-compliant.yaml,allow,0,none,enforce
+REQ-017,Art. 8(1),non-compliant,non-compliant/req017-violation.yaml,deny,1,asset-metadata annotations absent,enforce
+REQ-018,Art. 9(4)(a),compliant,compliant/req018-compliant.yaml,allow,0,none,enforce
+REQ-018,Art. 9(4)(a),non-compliant,non-compliant/req018-violation.yaml,deny,1,"writable rootfs, escalation allowed, no seccomp",enforce
+REQ-019,Art. 9(4)(c),compliant,compliant/req019-compliant.yaml,allow,0,none,enforce
+REQ-019,Art. 9(4)(c),non-compliant,non-compliant/req019-violation.yaml,deny,1,default ServiceAccount,enforce
+REQ-020,Art. 10(3),compliant,compliant/req020-compliant.yaml,allow,0,none,enforce
+REQ-020,Art. 10(3),non-compliant,non-compliant/req020-violation.yaml,deny,1,logging annotation absent,enforce
+REQ-022,Art. 15(1),compliant,compliant/req022-compliant.yaml,allow,0,none,audit
+REQ-022,Art. 15(1),non-compliant,non-compliant/req022-violation.yaml,allow-with-report,1,image signature annotation absent,audit
+REQ-023B,Art. 15(1),compliant,compliant/req023b-compliant.yaml,allow,0,none,enforce
+REQ-023B,Art. 15(1),non-compliant,non-compliant/req023b-violation.yaml,deny,1,image from unapproved registry,enforce
+REQ-024,Art. 11(5),compliant,compliant/req024-compliant.yaml,allow,0,none,enforce
+REQ-024,Art. 11(5),non-compliant,non-compliant/req024-violation.yaml,deny,1,criticality high without a PodDisruptionBudget,enforce
+REQ-025,Art. 5(2)(d),compliant,compliant/req025-compliant.yaml,allow,0,none,enforce
+REQ-025,Art. 5(2)(d),non-compliant,non-compliant/req025-violation.yaml,deny,1,description annotation absent,enforce
+REQ-027,Art. 6(2),compliant,compliant/req027-compliant.yaml,allow,0,none,enforce
+REQ-027,Art. 6(2),non-compliant,non-compliant/req027-violation.yaml,deny,1,dependency annotation absent,enforce
+REQ-001,see register,compliant,compliant/req001-compliant.yaml,allow,0,none,enforce
+REQ-001,see register,non-compliant,non-compliant/req001-violation.yaml,deny,1,target requirement broken,enforce
+REQ-002,see register,compliant,compliant/req002-compliant.yaml,allow,0,none,enforce
+REQ-002,see register,non-compliant,non-compliant/req002-violation.yaml,deny,1,target requirement broken,enforce
+REQ-028,see register,compliant,compliant/req028-compliant.yaml,allow,0,none,enforce
+REQ-028,see register,non-compliant,non-compliant/req028-violation.yaml,deny,1,target requirement broken,enforce
