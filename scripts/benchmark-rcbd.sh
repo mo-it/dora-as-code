@@ -65,8 +65,8 @@
 
 set -uo pipefail   # -e omitted deliberately: v1 died silently on empty greps
 
-BLOCKS="${1:-10}"
-REPS="${2:-5}"
+BLOCKS="${1:-12}"
+REPS="${2:-4}"
 ARGOCD_APP="${3:-dora-bench-compliant}"
 WARMUP="${WARMUP:-5}"
 LOAD_CEILING="${LOAD_CEILING:-6.0}"
@@ -76,6 +76,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 RESULTS_DIR="$REPO_DIR/results"
 PROBE_BAD="$REPO_DIR/manifests/non-compliant/req010-violation.yaml"
+PROBE_OK="$REPO_DIR/manifests/benchmark/req006-compliant.yaml"
 GK_WH="gatekeeper-validating-webhook-configuration"
 SENTINEL='{"matchLabels":{"dora-isolation/disabled":"true"}}'
 BACKUP="$REPO_DIR/evidence/forensics/all-webhooks-20260726-131348.yaml"
@@ -104,13 +105,23 @@ restore_all() {
     info "Restoring engines (exit trap)..."
     kubectl scale deployment -n kyverno --all --replicas=1 >/dev/null 2>&1
     kubectl scale deployment -n gatekeeper-system --all --replicas=1 >/dev/null 2>&1
-    kubectl wait --for=condition=ready pod --all -n kyverno --timeout=240s >/dev/null 2>&1
-    local waited=0
-    while [ "$waited" -lt 240 ]; do
-        [ "$(kubectl get validatingwebhookconfigurations --no-headers 2>/dev/null \
-             | grep -c '^kyverno-')" -ge 7 ] && break
+    # `kubectl wait --all` exits immediately with "no matching resources" when
+    # zero pods exist, so it never actually waited -- which is why an earlier
+    # recover reported success while kyverno-admission-controller was Pending.
+    # The service endpoint is the honest readiness signal.
+    local w=0
+    while [ "$w" -lt 240 ]; do
+        kubectl get endpoints -n kyverno kyverno-svc \
+            -o jsonpath='{.subsets[0].addresses[0].ip}' 2>/dev/null | grep -q . && break
+        sleep 5; w=$((w+5)); printf "\r    waiting for kyverno-svc endpoint (%ds)   " "$w"
+    done
+    local waited=0 ready wh
+    while [ "$waited" -lt 300 ]; do
+        ready=$(kubectl get pods -n kyverno --no-headers 2>/dev/null | grep -c "1/1 *Running")
+        wh=$(kubectl get validatingwebhookconfigurations --no-headers 2>/dev/null | grep -c '^kyverno-')
+        [ "$ready" -ge 4 ] && [ "$wh" -ge 7 ] && break
         sleep 5; waited=$((waited+5))
-        printf "\r    restoring Kyverno webhooks (%ds)   " "$waited"
+        printf "\r    Kyverno pods %d/4 ready, webhooks %d/7 (%ds)   " "$ready" "$wh" "$waited"
     done
     gk_webhook on >/dev/null 2>&1
     echo ""
@@ -148,14 +159,13 @@ kyverno_up() {
     # After scaling from zero Kyverno takes 30-60s to rebuild its seven webhook
     # configurations. A fixed 15s sleep let timing start before the engine was
     # in the admission path -- the same class of error as the 26 July run.
-    local waited=0
+    local waited=0 n r
     while [ "$waited" -lt 300 ]; do
-        local n
-        n=$(kubectl get validatingwebhookconfigurations --no-headers 2>/dev/null \
-            | grep -c "^kyverno-")
-        [ "$n" -ge 7 ] && { sleep 8; return 0; }
+        r=$(kubectl get pods -n kyverno --no-headers 2>/dev/null | grep -c "1/1 *Running")
+        n=$(kubectl get validatingwebhookconfigurations --no-headers 2>/dev/null | grep -c "^kyverno-")
+        [ "$r" -ge 4 ] && [ "$n" -ge 7 ] && { sleep 8; return 0; }
         sleep 5; waited=$((waited + 5))
-        printf "\r    waiting for Kyverno webhooks: %d/7 (%ds)   " "$n" "$waited"
+        printf "\r    Kyverno pods %d/4, webhooks %d/7 (%ds)   " "$r" "$n" "$waited"
     done
     warn "Kyverno webhooks did not reach 7 within 300s"
     return 1
@@ -237,7 +247,10 @@ measure_argocd_sync_ms() {
     # rather than by admission. --force alone pushes every resource through the
     # API server, so each object still traverses the admission webhooks.
     # Waiting on --sync only, never --health, for the same reason.
-    argocd app sync "$ARGOCD_APP" --force --timeout 180 >/dev/null 2>&1
+    # --prune is required: stale resources left by the v1 manifest set otherwise
+    # make the CLI exit fatal ("N resources require pruning") and leave the app
+    # OutOfSync, so the subsequent `app wait --sync` can never succeed.
+    argocd app sync "$ARGOCD_APP" --force --prune --timeout 180 >/dev/null 2>&1
     argocd app wait "$ARGOCD_APP" --sync --timeout 180 >/dev/null 2>&1
     e=$(date +%s%N)
     echo $(( (e - s) / 1000000 ))
@@ -245,9 +258,17 @@ measure_argocd_sync_ms() {
 
 run_cycle() {
     local block="$1" cfg="$2" rep="$3" pos="$4"
-    local lb la sync flag
+    local lb la sync adm flag
     lb=$(awk '{print $1}' /proc/loadavg)
     sync=$(measure_argocd_sync_ms)
+    # A genuinely separate measurement. v6 wrote the sync value into both
+    # columns, so the "admission latency" section of the report was a duplicate
+    # of the sync section rather than a second metric.
+    local a0 a1
+    a0=$(date +%s%N)
+    kubectl apply --dry-run=server -f "$PROBE_OK" >/dev/null 2>&1
+    a1=$(date +%s%N)
+    adm=$(( (a1 - a0) / 1000000 ))
     la=$(awk '{print $1}' /proc/loadavg)
 
     # Flagged, not dropped. Removing observations post hoc is a researcher degree
@@ -256,7 +277,7 @@ run_cycle() {
     flag="ok"
     (( $(echo "$lb > $LOAD_CEILING" | bc -l 2>/dev/null || echo 0) )) && flag="high_load"
 
-    echo "$block,$cfg,$rep,$pos,$sync,$sync,0,$lb,$la,$flag,$(date -Iseconds)" >> "$OUTFILE"
+    echo "$block,$cfg,$rep,$pos,$sync,$adm,0,$lb,$la,$flag,$(date -Iseconds)" >> "$OUTFILE"
     printf "\r    %-11s rep %d/%d  sync=%6sms  load=%-5s %s      " \
         "$cfg" "$rep" "$REPS" "$sync" "$lb" \
         "$([ "$flag" = high_load ] && echo '[HIGH LOAD]')"
@@ -269,12 +290,23 @@ if [ "${1:-}" = "recover" ]; then
     info "Recovering cluster state..."
     kubectl scale deployment -n kyverno --all --replicas=1 >/dev/null 2>&1
     kubectl scale deployment -n gatekeeper-system --all --replicas=1 >/dev/null 2>&1
-    kubectl wait --for=condition=ready pod --all -n kyverno --timeout=240s >/dev/null 2>&1
-    w=0
+    # `kubectl wait --all` exits immediately with "no matching resources" when
+    # zero pods exist, so it never actually waited -- which is why an earlier
+    # recover reported success while kyverno-admission-controller was Pending.
+    # The service endpoint is the honest readiness signal.
+    local w=0
     while [ "$w" -lt 240 ]; do
+        kubectl get endpoints -n kyverno kyverno-svc \
+            -o jsonpath='{.subsets[0].addresses[0].ip}' 2>/dev/null | grep -q . && break
+        sleep 5; w=$((w+5)); printf "\r    waiting for kyverno-svc endpoint (%ds)   " "$w"
+    done
+    w=0
+    while [ "$w" -lt 300 ]; do
+        r=$(kubectl get pods -n kyverno --no-headers 2>/dev/null | grep -c "1/1 *Running")
         n=$(kubectl get validatingwebhookconfigurations --no-headers 2>/dev/null | grep -c '^kyverno-')
-        [ "$n" -ge 7 ] && break
-        sleep 5; w=$((w+5)); printf "\r    Kyverno webhooks: %d/7 (%ds)   " "$n" "$w"
+        [ "$r" -ge 4 ] && [ "$n" -ge 7 ] && break
+        sleep 5; w=$((w+5))
+        printf "\r    Kyverno pods %d/4, webhooks %d/7 (%ds)   " "$r" "$n" "$w"
     done
     echo ""
     gk_webhook on >/dev/null 2>&1
@@ -286,8 +318,8 @@ fi
 # Scaling four Kyverno controllers back up needs headroom. If the node is
 # already tight, kyverno_up times out and the run aborts mid-block.
 FREE_MB=$(free -m | awk '/^Mem:/{print $7}')
-if [ "${FREE_MB:-0}" -lt 1500 ]; then
-    err "Only ${FREE_MB}MB available memory. Free at least 1500MB before running."
+if [ "${FREE_MB:-0}" -lt 1200 ]; then
+    err "Only ${FREE_MB}MB available memory. Free at least 1200MB before running."
     err "Try: kubectl delete deployments --all -n dora-test; wsl.exe --shutdown (then reopen)"
     exit 1
 fi
@@ -329,7 +361,18 @@ echo ""; log "Warm-up complete"; echo ""
 
 ABORTED=0
 for block in $(seq 1 "$BLOCKS"); do
-    ORDER=$(printf "baseline\nkyverno\ngatekeeper\n" | shuf)
+    # BALANCED ordering, not random. With few blocks a random shuffle can leave
+    # position confounded with configuration: the 19 Aug 6-block run drew the
+    # same order four times running, putting Gatekeeper in position 3 five times
+    # out of six, and the randomisation check duly failed (H=8.86, p=0.012).
+    # There are exactly 3! = 6 orderings of three configurations. Cycling through
+    # all six guarantees each configuration occupies each position an equal
+    # number of times, so position cannot confound the comparison. Block counts
+    # that are multiples of 6 are therefore perfectly balanced.
+    PERMS=("baseline kyverno gatekeeper" "baseline gatekeeper kyverno" \
+           "kyverno baseline gatekeeper" "kyverno gatekeeper baseline" \
+           "gatekeeper baseline kyverno" "gatekeeper kyverno baseline")
+    ORDER=$(echo "${PERMS[$(( (block - 1) % 6 ))]}" | tr ' ' '\n')
     info "Block $block/$BLOCKS — order: $(echo "$ORDER" | tr '\n' ' ')"
     pos=0
     while read -r cfg; do

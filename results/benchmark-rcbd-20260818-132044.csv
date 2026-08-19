@@ -1,3 +1,0 @@
-cycle_block,configuration,rep,order_in_block,argocd_sync_ms,admission_ms,webhook_delta_ms,load_before,load_after,quality_flag,timestamp
-1,gatekeeper,1,1,196116,196116,0,0.80,0.93,ok,2026-08-18T13:31:58+01:00
-1,gatekeeper,2,1,197522,197522,0,0.93,0.89,ok,2026-08-18T13:35:16+01:00

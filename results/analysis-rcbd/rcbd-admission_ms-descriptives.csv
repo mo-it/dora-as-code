@@ -1,0 +1,4 @@
+configuration,n,mean_ms,sd_ms,median_ms,iqr_ms,mad_ms,min_ms,p95_ms,p99_ms,max_ms,cv_pct
+Baseline (no policy engine),47,334.1,26.3,322.0,26.0,5.0,312,384.0,420.8,441,7.9
+Kyverno,48,348.6,28.0,338.0,18.8,8.0,325,419.9,444.1,454,8.0
+OPA Gatekeeper,46,343.5,19.0,338.5,14.2,6.5,325,375.8,415.1,430,5.5

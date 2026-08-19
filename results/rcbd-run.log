@@ -1,0 +1,82 @@
+nohup: ignoring input
+[0;34m[i][0m Available memory: 3219MB
+
+=============================================================
+ DORA-as-Code — Phase 4 benchmark (CA2-aligned, RCBD)
+=============================================================
+ Primary metric:      ArgoCD sync duration (per CA2)
+ Blocks:              12
+ Reps per block:      4
+ Cycles/config:       48   (CA2 specifies 50)
+ Baseline:            controllers scaled to 0 (true no-engine)
+ ArgoCD app:          dora-bench-compliant
+ Output:              benchmark-rcbd-20260819-113918.csv
+=============================================================
+
+[0;34m[i][0m Warm-up: 5 discarded sync cycles
+    warm-up 1/5    warm-up 2/5    warm-up 3/5    warm-up 4/5    warm-up 5/5
+[0;32m[✓][0m Warm-up complete
+
+[0;34m[i][0m Block 1/12 — order: baseline kyverno gatekeeper 
+    baseline    rep 1/4  sync=  1842ms  load=0.51            baseline    rep 2/4  sync=  1768ms  load=0.51            baseline    rep 3/4  sync=  1950ms  load=0.63            baseline    rep 4/4  sync=  1867ms  load=0.63        
+    Kyverno pods 0/4, webhooks 0/7 (5s)       Kyverno pods 2/4, webhooks 0/7 (10s)       Kyverno pods 3/4, webhooks 0/7 (15s)       Kyverno pods 3/4, webhooks 2/7 (20s)       Kyverno pods 3/4, webhooks 2/7 (25s)       Kyverno pods 4/4, webhooks 2/7 (30s)       Kyverno pods 4/4, webhooks 2/7 (35s)       kyverno     rep 1/4  sync=  2419ms  load=0.74            kyverno     rep 2/4  sync=  2061ms  load=0.76            kyverno     rep 3/4  sync=  1881ms  load=0.76            kyverno     rep 4/4  sync=  1880ms  load=0.78        
+    gatekeeper  rep 1/4  sync=  2111ms  load=0.94            gatekeeper  rep 2/4  sync=  2037ms  load=0.94            gatekeeper  rep 3/4  sync=  2042ms  load=0.86            gatekeeper  rep 4/4  sync=  2010ms  load=0.86        
+[0;34m[i][0m Block 2/12 — order: baseline gatekeeper kyverno 
+    baseline    rep 1/4  sync=  1860ms  load=0.68            baseline    rep 2/4  sync=   607ms  load=1.19            baseline    rep 3/4  sync=  1861ms  load=1.19            baseline    rep 4/4  sync=  1884ms  load=1.25        
+    gatekeeper  rep 1/4  sync=  2118ms  load=1.20            gatekeeper  rep 2/4  sync=  1902ms  load=1.26            gatekeeper  rep 3/4  sync=  2060ms  load=1.26            gatekeeper  rep 4/4  sync=  1883ms  load=1.16        
+    Kyverno pods 0/4, webhooks 0/7 (5s)       Kyverno pods 2/4, webhooks 0/7 (10s)       Kyverno pods 3/4, webhooks 0/7 (15s)       Kyverno pods 3/4, webhooks 2/7 (20s)       Kyverno pods 3/4, webhooks 2/7 (25s)       Kyverno pods 4/4, webhooks 2/7 (30s)       kyverno     rep 1/4  sync=   803ms  load=1.52            kyverno     rep 2/4  sync=  1789ms  load=1.52            kyverno     rep 3/4  sync=  1924ms  load=2.28            kyverno     rep 4/4  sync=  1857ms  load=2.28        
+[0;34m[i][0m Block 3/12 — order: kyverno baseline gatekeeper 
+    kyverno     rep 1/4  sync=  2048ms  load=1.38            kyverno     rep 2/4  sync=  1993ms  load=1.43            kyverno     rep 3/4  sync=  1908ms  load=1.43            kyverno     rep 4/4  sync=  1908ms  load=1.43        
+    baseline    rep 1/4  sync=  1943ms  load=1.00            baseline    rep 2/4  sync=  1938ms  load=1.00            baseline    rep 3/4  sync=  2033ms  load=0.92            baseline    rep 4/4  sync=  2085ms  load=0.92        
+    gatekeeper  rep 1/4  sync=  1977ms  load=1.64            gatekeeper  rep 2/4  sync=  1870ms  load=1.64            gatekeeper  rep 3/4  sync=  1913ms  load=1.67            gatekeeper  rep 4/4  sync=  1934ms  load=1.67        
+[0;34m[i][0m Block 4/12 — order: kyverno gatekeeper baseline 
+    Kyverno pods 4/4, webhooks 2/7 (5s)       kyverno     rep 1/4  sync=  2011ms  load=0.97            kyverno     rep 2/4  sync=  1913ms  load=0.97            kyverno     rep 3/4  sync=  1846ms  load=0.97            kyverno     rep 4/4  sync=  1766ms  load=0.97        
+    gatekeeper  rep 1/4  sync=  2050ms  load=1.25            gatekeeper  rep 2/4  sync=  1895ms  load=1.23            gatekeeper  rep 3/4  sync=  2049ms  load=1.23            gatekeeper  rep 4/4  sync=  2384ms  load=1.38        
+    baseline    rep 1/4  sync=  1846ms  load=0.94            baseline    rep 2/4  sync=  1820ms  load=0.87            baseline    rep 3/4  sync=  1909ms  load=0.87            baseline    rep 4/4  sync=  1810ms  load=0.87        
+[0;34m[i][0m Block 5/12 — order: gatekeeper baseline kyverno 
+    gatekeeper  rep 1/4  sync=  1982ms  load=1.63            gatekeeper  rep 2/4  sync=  1965ms  load=1.63            gatekeeper  rep 3/4  sync=  1909ms  load=1.63            gatekeeper  rep 4/4  sync=  1879ms  load=1.58        
+    baseline    rep 1/4  sync=  1868ms  load=1.06            baseline    rep 2/4  sync=   754ms  load=1.06            baseline    rep 3/4  sync=  1870ms  load=1.06            baseline    rep 4/4  sync=  1807ms  load=1.05        
+    Kyverno pods 4/4, webhooks 2/7 (5s)       Kyverno pods 4/4, webhooks 2/7 (10s)       kyverno     rep 1/4  sync=  2265ms  load=0.54            kyverno     rep 2/4  sync=  1832ms  load=0.54            kyverno     rep 3/4  sync=  1900ms  load=0.74            kyverno     rep 4/4  sync=  1805ms  load=0.74        
+[0;34m[i][0m Block 6/12 — order: gatekeeper kyverno baseline 
+    gatekeeper  rep 1/4  sync=  2558ms  load=0.62            gatekeeper  rep 2/4  sync=  1983ms  load=0.65            gatekeeper  rep 3/4  sync=  2018ms  load=0.65            gatekeeper  rep 4/4  sync=158454ms  load=0.65        
+    Kyverno pods 4/4, webhooks 2/7 (5s)       Kyverno pods 4/4, webhooks 2/7 (10s)       kyverno     rep 1/4  sync=  2165ms  load=1.17            kyverno     rep 2/4  sync=  1858ms  load=1.17            kyverno     rep 3/4  sync=  1881ms  load=1.17            kyverno     rep 4/4  sync=  2001ms  load=1.07        
+    baseline    rep 1/4  sync=  1921ms  load=2.58            baseline    rep 2/4  sync=  1838ms  load=2.93            baseline    rep 3/4  sync=  1888ms  load=2.93            baseline    rep 4/4  sync=  1965ms  load=2.94        
+[0;34m[i][0m Block 7/12 — order: baseline kyverno gatekeeper 
+    baseline    rep 1/4  sync=  2039ms  load=2.17            baseline    rep 2/4  sync=  1984ms  load=2.17            baseline    rep 3/4  sync=  1918ms  load=1.99            baseline    rep 4/4  sync=  1905ms  load=1.99        
+    Kyverno pods 0/4, webhooks 0/7 (5s)       Kyverno pods 2/4, webhooks 0/7 (10s)       Kyverno pods 3/4, webhooks 0/7 (15s)       Kyverno pods 3/4, webhooks 2/7 (20s)       Kyverno pods 3/4, webhooks 2/7 (25s)       Kyverno pods 4/4, webhooks 2/7 (30s)       kyverno     rep 1/4  sync=  1928ms  load=0.88            kyverno     rep 2/4  sync=  1875ms  load=0.97            kyverno     rep 3/4  sync=  1856ms  load=0.97            kyverno     rep 4/4  sync=  2007ms  load=0.89        
+    gatekeeper  rep 1/4  sync=  2070ms  load=0.62            gatekeeper  rep 2/4  sync=  1867ms  load=0.65            gatekeeper  rep 3/4  sync=  1997ms  load=0.65            gatekeeper  rep 4/4  sync=  1935ms  load=0.65        
+[0;34m[i][0m Block 8/12 — order: baseline gatekeeper kyverno 
+    baseline    rep 1/4  sync=  2112ms  load=0.52            baseline    rep 2/4  sync=  1840ms  load=0.52            baseline    rep 3/4  sync=   700ms  load=0.72            baseline    rep 4/4  sync=  1890ms  load=0.72        
+    gatekeeper  rep 1/4  sync=  2040ms  load=0.44            gatekeeper  rep 2/4  sync=  1852ms  load=1.20            gatekeeper  rep 3/4  sync=  2054ms  load=1.20            gatekeeper  rep 4/4  sync=  1877ms  load=1.59        
+    Kyverno pods 4/4, webhooks 2/7 (5s)       Kyverno pods 4/4, webhooks 2/7 (10s)       kyverno     rep 1/4  sync=  1950ms  load=0.95            kyverno     rep 2/4  sync=  1784ms  load=0.95            kyverno     rep 3/4  sync=  1898ms  load=0.95            kyverno     rep 4/4  sync=  1822ms  load=0.88        
+[0;34m[i][0m Block 9/12 — order: kyverno baseline gatekeeper 
+    kyverno     rep 1/4  sync=  1879ms  load=0.53            kyverno     rep 2/4  sync=  1889ms  load=0.53            kyverno     rep 3/4  sync=   833ms  load=1.53            kyverno     rep 4/4  sync=  1816ms  load=1.53        
+    baseline    rep 1/4  sync=  1918ms  load=1.14            baseline    rep 2/4  sync=  1781ms  load=1.14            baseline    rep 3/4  sync=  1875ms  load=1.14            baseline    rep 4/4  sync=  1893ms  load=1.29        
+    gatekeeper  rep 1/4  sync=  1976ms  load=1.18            gatekeeper  rep 2/4  sync=  1868ms  load=1.18            gatekeeper  rep 3/4  sync=  1976ms  load=1.17            gatekeeper  rep 4/4  sync=  1930ms  load=1.17        
+[0;34m[i][0m Block 10/12 — order: kyverno gatekeeper baseline 
+    Kyverno pods 4/4, webhooks 2/7 (5s)       Kyverno pods 4/4, webhooks 2/7 (10s)       kyverno     rep 1/4  sync=  1907ms  load=0.65            kyverno     rep 2/4  sync=  1884ms  load=0.65            kyverno     rep 3/4  sync=  1889ms  load=0.68            kyverno     rep 4/4  sync=  1887ms  load=0.68        
+    gatekeeper  rep 1/4  sync=  1968ms  load=0.94            gatekeeper  rep 2/4  sync=  2027ms  load=0.94            gatekeeper  rep 3/4  sync=  2035ms  load=0.94            gatekeeper  rep 4/4  sync=  1881ms  load=0.94        
+    baseline    rep 1/4  sync=  1959ms  load=0.62            baseline    rep 2/4  sync=  1918ms  load=0.65            baseline    rep 3/4  sync=  1837ms  load=0.65            baseline    rep 4/4  sync=  1899ms  load=0.68        
+[0;34m[i][0m Block 11/12 — order: gatekeeper baseline kyverno 
+    gatekeeper  rep 1/4  sync=  2003ms  load=1.18            gatekeeper  rep 2/4  sync=  1971ms  load=1.18            gatekeeper  rep 3/4  sync=  2070ms  load=1.73            gatekeeper  rep 4/4  sync=  1933ms  load=1.73        
+    baseline    rep 1/4  sync=  1877ms  load=1.18            baseline    rep 2/4  sync=  1777ms  load=1.17            baseline    rep 3/4  sync=  1821ms  load=1.17            baseline    rep 4/4  sync=  1795ms  load=1.31        
+    Kyverno pods 4/4, webhooks 2/7 (5s)       Kyverno pods 4/4, webhooks 2/7 (10s)       kyverno     rep 1/4  sync=111010ms  load=0.97            kyverno     rep 2/4  sync=  1928ms  load=0.22            kyverno     rep 3/4  sync=  1802ms  load=0.22            kyverno     rep 4/4  sync=  1876ms  load=0.20        
+[0;34m[i][0m Block 12/12 — order: gatekeeper kyverno baseline 
+    gatekeeper  rep 1/4  sync=  2074ms  load=0.18            gatekeeper  rep 2/4  sync=  2031ms  load=0.41            gatekeeper  rep 3/4  sync=  2003ms  load=0.41            gatekeeper  rep 4/4  sync=   681ms  load=0.46        
+    Kyverno pods 4/4, webhooks 2/7 (5s)       Kyverno pods 4/4, webhooks 2/7 (10s)       kyverno     rep 1/4  sync=  5118ms  load=5.46            kyverno     rep 2/4  sync=  3155ms  load=5.11            kyverno     rep 3/4  sync=  2181ms  load=5.11            kyverno     rep 4/4  sync=  2059ms  load=4.70        
+    baseline    rep 1/4  sync=  2637ms  load=3.34            baseline    rep 2/4  sync=  2186ms  load=3.34            baseline    rep 3/4  sync=  2291ms  load=3.15            baseline    rep 4/4  sync=  2119ms  load=3.15        
+
+[0;34m[i][0m Run finished — exit trap will restore engines.
+
+Webhook configs: 1 (expect 8)
+Policy modes:
+      1 Audit
+     24 Enforce
+
+[0;32m[✓][0m Benchmark complete: /home/mohit/dora-as-code/results/benchmark-rcbd-20260819-113918.csv
+[0;34m[i][0m Rows: 144
+[0;34m[i][0m Next: python3 scripts/analyse-benchmarks.py --rcbd /home/mohit/dora-as-code/results/benchmark-rcbd-20260819-113918.csv --out results/analysis-rcbd
+
+[0;34m[i][0m Restoring engines (exit trap)...
+    waiting for kyverno-svc endpoint (5s)       waiting for kyverno-svc endpoint (10s)       waiting for kyverno-svc endpoint (15s)       waiting for kyverno-svc endpoint (20s)       waiting for kyverno-svc endpoint (25s)       waiting for kyverno-svc endpoint (30s)       Kyverno pods 4/4 ready, webhooks 2/7 (5s)       Kyverno pods 4/4 ready, webhooks 2/7 (10s)   
+[0;32m[✓][0m Cluster restored: 8 webhook configs

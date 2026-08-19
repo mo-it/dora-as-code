@@ -1,0 +1,4 @@
+comparison,median_a_ms,median_b_ms,paired_median_diff_ms,wilcoxon_w,p_raw,cliffs_delta,magnitude,vargha_delaney_a12,p_holm,significant_at_0.05
+Baseline (no policy engine) vs Kyverno,1931.0,1906.5,43.0,4.0,0.21875,0.0004,negligible,0.5002,0.21875,False
+Baseline (no policy engine) vs OPA Gatekeeper,1931.0,2012.5,-86.5,1.0,0.0625,-0.3854,medium,0.3073,0.125,False
+Kyverno vs OPA Gatekeeper,1906.5,2012.5,-110.5,0.0,0.03125,-0.388,medium,0.306,0.09375,False
