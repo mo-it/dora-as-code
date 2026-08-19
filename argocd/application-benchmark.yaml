@@ -34,7 +34,7 @@ spec:
   source:
     repoURL: https://github.com/mo-it/dora-as-code.git
     targetRevision: HEAD
-    path: manifests/compliant
+    path: manifests/benchmark
   destination:
     server: https://kubernetes.default.svc
     namespace: dora-test
