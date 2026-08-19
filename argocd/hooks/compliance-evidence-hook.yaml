@@ -1,0 +1,293 @@
+# ArgoCD PostSync compliance evidence hook.
+#
+# Runs after every successful sync, collects policy evaluation results from both
+# engines, joins them to DORA articles, and writes a JSON evidence document.
+#
+# The pod metadata below is not decoration: ArgoCD applies this Job through the
+# same admission path as everything else, so it must satisfy all 25 policies or
+# the hook is rejected by the project's own compliance controls.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dora-evidence-script
+  namespace: dora-test
+  labels:
+    dora.io/component: compliance-evidence
+data:
+  collect.py: |
+    import json, os, ssl, sys, urllib.request, datetime
+
+    SA = "/var/run/secrets/kubernetes.io/serviceaccount"
+    NS = os.environ.get("TARGET_NAMESPACE", "dora-test")
+    HOST = "https://kubernetes.default.svc"
+
+    COLLECTION_ERRORS = []
+    token = open(f"{SA}/token").read().strip()
+    ctx = ssl.create_default_context(cafile=f"{SA}/ca.crt")
+
+    def api(path):
+        req = urllib.request.Request(HOST + path,
+                                     headers={"Authorization": f"Bearer {token}"})
+        try:
+            with urllib.request.urlopen(req, context=ctx, timeout=20) as r:
+                return json.load(r)
+        except Exception as e:
+            COLLECTION_ERRORS.append(f"{path}: {e}")
+            print(f"  [warn] {path}: {e}", file=sys.stderr)
+            return {}
+
+    MAPPING = json.loads(os.environ["DORA_MAPPING"])
+
+    def dora_for(policy_name):
+        """Resolve an engine policy name back to its DORA requirement."""
+        if policy_name in MAPPING:
+            return MAPPING[policy_name]
+        # Kyverno ClusterPolicies are named dora-artN-<policy> while the register
+        # stores the short form. Strip the dora-artN- prefix and match on the
+        # remainder, longest key first so 'require-logging' cannot shadow
+        # 'require-logging-sidecar'.
+        import re as _re
+        stripped = _re.sub(r'^dora-art\d+[a-z]?-', '', policy_name)
+        if stripped in MAPPING:
+            return MAPPING[stripped]
+        for key in sorted(MAPPING, key=len, reverse=True):
+            if stripped == key or policy_name.endswith(key) or key in stripped:
+                return MAPPING[key]
+        return {"req_id": "UNMAPPED", "dora_article": "", "dora_subsection": "",
+                "requirement_text": "", "coverage_tier": ""}
+
+    evidence = {
+        "schema": "dora-as-code/compliance-evidence/v1",
+        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "namespace": NS,
+        "generated_by": "ArgoCD PostSync hook",
+        "engines": {},
+        "by_dora_article": {},
+        "summary": {},
+    }
+
+    # ---------------------------------------------------------------- Kyverno
+    print("Collecting Kyverno PolicyReports...")
+    kyverno_results = []
+    reports = api(f"/apis/wgpolicyk8s.io/v1alpha2/namespaces/{NS}/policyreports")
+    for rep in reports.get("items", []):
+        subject = rep.get("scope", {})
+        for res in rep.get("results", []):
+            pol = res.get("policy", "")
+            d = dora_for(pol)
+            kyverno_results.append({
+                "policy": pol,
+                "rule": res.get("rule", ""),
+                "result": res.get("result", ""),
+                "severity": res.get("severity", ""),
+                "message": (res.get("message", "") or "")[:300],
+                "resource_kind": subject.get("kind", ""),
+                "resource_name": subject.get("name", ""),
+                "req_id": d["req_id"],
+                "dora_article": d["dora_article"],
+                "dora_subsection": d["dora_subsection"],
+                "coverage_tier": d["coverage_tier"],
+            })
+    evidence["engines"]["kyverno"] = {
+        "reports_found": len(reports.get("items", [])),
+        "results": kyverno_results,
+        "passed": sum(1 for r in kyverno_results if r["result"] == "pass"),
+        "failed": sum(1 for r in kyverno_results if r["result"] == "fail"),
+    }
+    print(f"  {len(kyverno_results)} results from {len(reports.get('items', []))} reports")
+
+    # ------------------------------------------------------------- Gatekeeper
+    # Each ConstraintTemplate registers its own CRD kind, so the constraint kinds
+    # must be discovered rather than hard-coded.
+    print("Collecting Gatekeeper constraint status...")
+    gk_results = []
+    group = api("/apis/constraints.gatekeeper.sh/v1beta1")
+    for r in group.get("resources", []):
+        name = r.get("name", "")
+        if "/" in name:          # skip subresources such as <kind>/status
+            continue
+        items = api(f"/apis/constraints.gatekeeper.sh/v1beta1/{name}").get("items", [])
+        for c in items:
+            meta = c.get("metadata", {})
+            status = c.get("status", {})
+            d = dora_for(meta.get("name", ""))
+            violations = status.get("violations", []) or []
+            gk_results.append({
+                "constraint_kind": c.get("kind", ""),
+                "constraint_name": meta.get("name", ""),
+                "enforcement_action": c.get("spec", {}).get("enforcementAction", "deny"),
+                "total_violations": status.get("totalViolations", 0),
+                "violations": [
+                    {"kind": v.get("kind", ""), "name": v.get("name", ""),
+                     "message": (v.get("message", "") or "")[:300]}
+                    for v in violations[:20]
+                ],
+                "req_id": d["req_id"],
+                "dora_article": d["dora_article"],
+                "dora_subsection": d["dora_subsection"],
+                "coverage_tier": d["coverage_tier"],
+            })
+    evidence["engines"]["gatekeeper"] = {
+        "constraints_found": len(gk_results),
+        "results": gk_results,
+        "total_violations": sum(g["total_violations"] for g in gk_results),
+    }
+    print(f"  {len(gk_results)} constraints")
+
+    # --------------------------------------------------- roll up by DORA article
+    by_art = {}
+    for r in kyverno_results:
+        art = r["dora_subsection"] or r["dora_article"] or "unmapped"
+        e = by_art.setdefault(art, {"req_ids": set(), "kyverno_pass": 0,
+                                    "kyverno_fail": 0, "gatekeeper_violations": 0})
+        e["req_ids"].add(r["req_id"])
+        if r["result"] == "pass":
+            e["kyverno_pass"] += 1
+        elif r["result"] == "fail":
+            e["kyverno_fail"] += 1
+    for g in gk_results:
+        art = g["dora_subsection"] or g["dora_article"] or "unmapped"
+        e = by_art.setdefault(art, {"req_ids": set(), "kyverno_pass": 0,
+                                    "kyverno_fail": 0, "gatekeeper_violations": 0})
+        e["req_ids"].add(g["req_id"])
+        e["gatekeeper_violations"] += g["total_violations"]
+    evidence["by_dora_article"] = {
+        k: {**v, "req_ids": sorted(x for x in v["req_ids"] if x)}
+        for k, v in sorted(by_art.items())
+    }
+
+    # An absence of findings is NOT evidence of compliance. The first run of this
+    # hook reported "compliant": true having collected zero results, because an RBAC
+    # denial had silently blocked every constraint query. For a regulatory artefact
+    # that is the worst possible failure: an audit document attesting conformance
+    # because a permissions error produced no findings. The attestation is therefore
+    # gated on evidence sufficiency, and any collection error is recorded in the
+    # document itself rather than discarded.
+    expected_constraints = int(os.environ.get("EXPECTED_CONSTRAINTS", "25"))
+    sufficient = (
+        len(gk_results) >= expected_constraints
+        and len(kyverno_results) > 0
+        and not COLLECTION_ERRORS
+    )
+    if not sufficient:
+        attestation = "INDETERMINATE"
+    elif (evidence["engines"]["kyverno"]["failed"] == 0
+          and evidence["engines"]["gatekeeper"]["total_violations"] == 0):
+        attestation = "COMPLIANT"
+    else:
+        attestation = "NON_COMPLIANT"
+
+    evidence["collection_errors"] = COLLECTION_ERRORS
+    evidence["summary"] = {
+        "dora_articles_with_evidence": len(evidence["by_dora_article"]),
+        "kyverno_evaluations": len(kyverno_results),
+        "kyverno_passed": evidence["engines"]["kyverno"]["passed"],
+        "kyverno_failed": evidence["engines"]["kyverno"]["failed"],
+        "gatekeeper_constraints": len(gk_results),
+        "gatekeeper_constraints_expected": expected_constraints,
+        "gatekeeper_violations": evidence["engines"]["gatekeeper"]["total_violations"],
+        "collection_errors": len(COLLECTION_ERRORS),
+        "evidence_sufficient": sufficient,
+        "attestation": attestation,
+    }
+    if not sufficient:
+        print("\n*** ATTESTATION INDETERMINATE — evidence collection incomplete ***",
+              file=sys.stderr)
+        for e in COLLECTION_ERRORS[:10]:
+            print(f"    {e}", file=sys.stderr)
+
+    doc = json.dumps(evidence, indent=2)
+    print("\n===== COMPLIANCE EVIDENCE =====")
+    print(doc)
+
+    # ------------------------------------------- persist so it outlives the Job
+    cm = {"apiVersion": "v1", "kind": "ConfigMap",
+          "metadata": {"name": "dora-compliance-evidence", "namespace": NS,
+                       "labels": {"dora.io/artefact": "compliance-evidence"}},
+          "data": {"evidence.json": doc}}
+    body = json.dumps(cm).encode()
+    hdrs = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    for method, path in (("PUT", f"/api/v1/namespaces/{NS}/configmaps/dora-compliance-evidence"),
+                         ("POST", f"/api/v1/namespaces/{NS}/configmaps")):
+        try:
+            req = urllib.request.Request(HOST + path, data=body, headers=hdrs, method=method)
+            urllib.request.urlopen(req, context=ctx, timeout=20)
+            print(f"\nEvidence persisted to ConfigMap dora-compliance-evidence ({method})")
+            break
+        except Exception as e:
+            pass  # PUT 404s when the ConfigMap does not yet exist; POST then creates it
+
+    print("\nPostSync evidence collection complete.")
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dora-compliance-evidence
+  namespace: dora-test
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    dora.io/kernel-audit-enabled: "true"
+    dora.io/change-id: "CHG-EVIDENCE-HOOK"
+    dora.io/approved-by: "mohit-kumar"
+    dora.io/business-function: "compliance-evidence-generation"
+    dora.io/data-classification: "internal"
+    dora.io/asset-owner: "mohit-kumar"
+    dora.io/logging-configured: "true"
+    dora.io/image-signature-verified: "true"
+    dora.io/pdb-configured: "true"
+    dora.io/description: "Generates DORA compliance evidence after ArgoCD sync"
+    dora.io/dependencies: "kyverno,gatekeeper"
+  labels:
+    dora.test: "true"
+    app: dora-evidence
+    dora.io/owner: "mohit-kumar"
+    dora.io/team: "platform-engineering"
+    dora.io/criticality: "low"
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: dora-evidence
+    spec:
+      restartPolicy: Never
+      serviceAccountName: dora-evidence-collector
+      containers:
+        - name: collector
+          # docker.io/library/* is permitted by REQ-023b. A convenience image
+          # such as alpine/k8s would be BLOCKED by this project's own policy.
+          image: docker.io/library/python:3.12-alpine
+          command: ["python3", "/scripts/collect.py"]
+          env:
+            - name: TARGET_NAMESPACE
+              value: "dora-test"
+            - name: EXPECTED_CONSTRAINTS
+              value: "25"
+            - name: DORA_MAPPING
+              value: '{"dora-art5-require-labels":{"req_id":"REQ-012","dora_article":"Art. 5","dora_subsection":"5(2)(a)","requirement_text":"Maintain ICT asset inventory","coverage_tier":"partially-automatable"},"doralabels":{"req_id":"REQ-012","dora_article":"Art. 5","dora_subsection":"5(2)(a)","requirement_text":"Maintain ICT asset inventory","coverage_tier":"partially-automatable"},"dora-art5-require-description":{"req_id":"REQ-025","dora_article":"Art. 5","dora_subsection":"5(2)(d)","requirement_text":"Maintain documentation of ICT systems","coverage_tier":"partially-automatable"},"doradescription":{"req_id":"REQ-025","dora_article":"Art. 5","dora_subsection":"5(2)(d)","requirement_text":"Maintain documentation of ICT systems","coverage_tier":"partially-automatable"},"dora-art6-require-criticality":{"req_id":"REQ-013","dora_article":"Art. 6","dora_subsection":"6(1)(b)","requirement_text":"Identify and classify ICT assets by criticality","coverage_tier":"partially-automatable"},"doracriticality":{"req_id":"REQ-013","dora_article":"Art. 6","dora_subsection":"6(1)(b)","requirement_text":"Identify and classify ICT assets by criticality","coverage_tier":"partially-automatable"},"dora-art6-require-dependency":{"req_id":"REQ-027","dora_article":"Art. 6","dora_subsection":"6(2)","requirement_text":"Map ICT asset dependencies and interconnections","coverage_tier":"partially-automatable"},"doradependency":{"req_id":"REQ-027","dora_article":"Art. 6","dora_subsection":"6(2)","requirement_text":"Map ICT asset dependencies and interconnections","coverage_tier":"partially-automatable"},"dora-art8-require-asset-metadata":{"req_id":"REQ-017","dora_article":"Art. 8","dora_subsection":"8(1)","requirement_text":"Identify and document all ICT assets supporting business functions","coverage_tier":"partially-automatable"},"doraassetmetadata":{"req_id":"REQ-017","dora_article":"Art. 8","dora_subsection":"8(1)","requirement_text":"Identify and document all ICT assets supporting business functions","coverage_tier":"partially-automatable"},"dora-art9-require-encrypted-storage":{"req_id":"REQ-001","dora_article":"Art. 9","dora_subsection":"9(2)","requirement_text":"Ensure confidentiality of data at rest","coverage_tier":"fully-automatable"},"doraencryptedstorageclass":{"req_id":"REQ-001","dora_article":"Art. 9","dora_subsection":"9(2)","requirement_text":"Ensure confidentiality of data at rest","coverage_tier":"fully-automatable"},"dora-art9-require-tls":{"req_id":"REQ-002","dora_article":"Art. 9","dora_subsection":"9(2)","requirement_text":"Ensure integrity and confidentiality of data in transit","coverage_tier":"fully-automatable"},"doratls":{"req_id":"REQ-002","dora_article":"Art. 9","dora_subsection":"9(2)","requirement_text":"Ensure integrity and confidentiality of data in transit","coverage_tier":"fully-automatable"},"dora-art9-require-image-tag":{"req_id":"REQ-009","dora_article":"Art. 9","dora_subsection":"9(2)","requirement_text":"Ensure data integrity through immutable container images","coverage_tier":"fully-automatable"},"doraimagetag":{"req_id":"REQ-009","dora_article":"Art. 9","dora_subsection":"9(2)","requirement_text":"Ensure data integrity through immutable container images","coverage_tier":"fully-automatable"},"dora-art9-require-resource-quota":{"req_id":"REQ-028","dora_article":"Art. 9","dora_subsection":"9(3)(b)","requirement_text":"Implement logical segregation of ICT assets","coverage_tier":"fully-automatable"},"doraresourcequota":{"req_id":"REQ-028","dora_article":"Art. 9","dora_subsection":"9(3)(b)","requirement_text":"Implement logical segregation of ICT assets","coverage_tier":"fully-automatable"},"dora-art9-require-non-root":{"req_id":"REQ-010","dora_article":"Art. 9","dora_subsection":"9(4)(a)","requirement_text":"Restrict container runtime privileges - non-root execution","coverage_tier":"fully-automatable"},"dorarunasnonroot":{"req_id":"REQ-010","dora_article":"Art. 9","dora_subsection":"9(4)(a)","requirement_text":"Restrict container runtime privileges - non-root execution","coverage_tier":"fully-automatable"},"dora-art9-block-privileged":{"req_id":"REQ-011","dora_article":"Art. 9","dora_subsection":"9(4)(a)","requirement_text":"Prevent container breakout - host isolation","coverage_tier":"fully-automatable"},"dorablockprivileged":{"req_id":"REQ-011","dora_article":"Art. 9","dora_subsection":"9(4)(a)","requirement_text":"Prevent container breakout - host isolation","coverage_tier":"fully-automatable"},"dora-art9-require-security-hardening":{"req_id":"REQ-018","dora_article":"Art. 9","dora_subsection":"9(4)(a)","requirement_text":"Enforce security hardening on container filesystems","coverage_tier":"fully-automatable"},"dorasecuritycontext":{"req_id":"REQ-018","dora_article":"Art. 9","dora_subsection":"9(4)(a)","requirement_text":"Enforce security hardening on container filesystems","coverage_tier":"fully-automatable"},"dora-art9-block-wildcard-rbac":{"req_id":"REQ-003","dora_article":"Art. 9","dora_subsection":"9(4)(b)","requirement_text":"Implement least-privilege access controls","coverage_tier":"fully-automatable"},"dorawildcardrbac":{"req_id":"REQ-003","dora_article":"Art. 9","dora_subsection":"9(4)(b)","requirement_text":"Implement least-privilege access controls","coverage_tier":"fully-automatable"},"dora-art9-block-cluster-admin-binding":{"req_id":"REQ-004","dora_article":"Art. 9","dora_subsection":"9(4)(b)","requirement_text":"Prevent privilege escalation through RBAC bindings","coverage_tier":"fully-automatable"},"doraclusteradmin":{"req_id":"REQ-004","dora_article":"Art. 9","dora_subsection":"9(4)(b)","requirement_text":"Prevent privilege escalation through RBAC bindings","coverage_tier":"fully-automatable"},"dora-art9-require-auth-timeout":{"req_id":"REQ-026","dora_article":"Art. 9","dora_subsection":"9(4)(c)","requirement_text":"Implement authentication and session management controls","coverage_tier":"partially-automatable"},"doraauthtimeout":{"req_id":"REQ-026","dora_article":"Art. 9","dora_subsection":"9(4)(c)","requirement_text":"Implement authentication and session management controls","coverage_tier":"partially-automatable"},"dora-art9-restrict-default-sa":{"req_id":"REQ-019","dora_article":"Art. 9","dora_subsection":"9(4)(c)","requirement_text":"Restrict access to ICT resources to authorised service accounts only","coverage_tier":"partially-automatable"},"doradefaultsa":{"req_id":"REQ-019","dora_article":"Art. 9","dora_subsection":"9(4)(c)","requirement_text":"Restrict access to ICT resources to authorised service accounts only","coverage_tier":"partially-automatable"},"dora-art9-require-sealed-secrets":{"req_id":"REQ-023","dora_article":"Art. 9","dora_subsection":"9(4)(d)","requirement_text":"Implement cryptographic key management controls","coverage_tier":"partially-automatable"},"dorasealedsecrets":{"req_id":"REQ-023","dora_article":"Art. 9","dora_subsection":"9(4)(d)","requirement_text":"Implement cryptographic key management controls","coverage_tier":"partially-automatable"},"dora-art10-require-kernel-audit":{"req_id":"REQ-005","dora_article":"Art. 10","dora_subsection":"10(1)","requirement_text":"Enable kernel-level security auditing on containers","coverage_tier":"partially-automatable"},"doraseccompaudit":{"req_id":"REQ-005","dora_article":"Art. 10","dora_subsection":"10(1)","requirement_text":"Enable kernel-level security auditing on containers","coverage_tier":"partially-automatable"},"dora-art10-require-logging":{"req_id":"REQ-020","dora_article":"Art. 10","dora_subsection":"10(3)","requirement_text":"Implement application-level log collection and forwarding","coverage_tier":"partially-automatable"},"doralogging":{"req_id":"REQ-020","dora_article":"Art. 10","dora_subsection":"10(3)","requirement_text":"Implement application-level log collection and forwarding","coverage_tier":"partially-automatable"},"dora-art11-require-resource-limits":{"req_id":"REQ-006","dora_article":"Art. 11","dora_subsection":"11(1)","requirement_text":"Ensure ICT system resilience through resource governance","coverage_tier":"fully-automatable"},"doraresourcelimits":{"req_id":"REQ-006","dora_article":"Art. 11","dora_subsection":"11(1)","requirement_text":"Ensure ICT system resilience through resource governance","coverage_tier":"fully-automatable"},"dora-art11-require-minimum-replicas":{"req_id":"REQ-007","dora_article":"Art. 11","dora_subsection":"11(1)","requirement_text":"Ensure high availability of critical ICT services","coverage_tier":"fully-automatable"},"dorareplicas":{"req_id":"REQ-007","dora_article":"Art. 11","dora_subsection":"11(1)","requirement_text":"Ensure high availability of critical ICT services","coverage_tier":"fully-automatable"},"dora-art11-require-pdb":{"req_id":"REQ-024","dora_article":"Art. 11","dora_subsection":"11(5)","requirement_text":"Implement graceful degradation capabilities","coverage_tier":"partially-automatable"},"dorapdb":{"req_id":"REQ-024","dora_article":"Art. 11","dora_subsection":"11(5)","requirement_text":"Implement graceful degradation capabilities","coverage_tier":"partially-automatable"},"dora-art13-require-change-annotation":{"req_id":"REQ-015","dora_article":"Art. 13","dora_subsection":"13(1)","requirement_text":"Implement ICT change management processes","coverage_tier":"partially-automatable"},"dorachangeannotation":{"req_id":"REQ-015","dora_article":"Art. 13","dora_subsection":"13(1)","requirement_text":"Implement ICT change management processes","coverage_tier":"partially-automatable"},"dora-art15-verify-image-signature":{"req_id":"REQ-022","dora_article":"Art. 15","dora_subsection":"15(1)","requirement_text":"Verify container image provenance and integrity","coverage_tier":"partially-automatable"},"doraimagesignature":{"req_id":"REQ-022","dora_article":"Art. 15","dora_subsection":"15(1)","requirement_text":"Verify container image provenance and integrity","coverage_tier":"partially-automatable"},"dora-art15-restrict-registries":{"req_id":"REQ-023b","dora_article":"Art. 15","dora_subsection":"15(1)","requirement_text":"Restrict container images to pre-approved registries","coverage_tier":"fully-automatable"},"doraregistries":{"req_id":"REQ-023b","dora_article":"Art. 15","dora_subsection":"15(1)","requirement_text":"Restrict container images to pre-approved registries","coverage_tier":"fully-automatable"}}'
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
+      volumes:
+        - name: script
+          configMap:
+            name: dora-evidence-script

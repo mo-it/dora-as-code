@@ -1,0 +1,22 @@
+# AUTO-GENERATED companion fixture for REQ-003.
+# The v1 test suite had only a NON-COMPLIANT ClusterRole, so a false positive on
+# compliant ClusterRoles was undetectable: the suite could confirm the policy
+# rejects wildcards but never that it admits least-privilege grants. It did not.
+# This fixture closes that blind spot.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-req003-compliant
+  labels:
+    dora.test: "true"
+    app: dora-test-app
+    dora.io/owner: "mohit-kumar"
+    dora.io/team: "platform-engineering"
+    dora.io/criticality: "low"
+  annotations:
+    dora.io/description: "Least-privilege ClusterRole fixture for REQ-003"
+    dora.io/dependencies: "none"
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "configmaps"]
+    verbs: ["get", "list", "watch"]

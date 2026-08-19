@@ -1,56 +1,54 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  annotations:
-    dora.article: 9(4)(b)
-    dora.coverage: fully-automatable
-    dora.requirement: Least-privilege access control
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"kyverno.io/v1","kind":"ClusterPolicy","metadata":{"annotations":{"dora.article":"9(4)(b)","dora.coverage":"fully-automatable","dora.requirement":"Least-privilege access control","policies.kyverno.io/description":"DORA Article 9(4)(b) requires least-privilege access controls. This policy blocks ClusterRoles that grant wildcard (*) permissions, preventing privilege escalation through over-broad RBAC."},"name":"dora-art9-block-wildcard-rbac"},"spec":{"background":true,"rules":[{"match":{"any":[{"resources":{"kinds":["ClusterRole"]}}]},"name":"block-wildcard-resources","validate":{"deny":{"conditions":{"any":[{"key":"*","operator":"AnyIn","value":"{{ request.object.rules[].resources[] }}"}]}},"message":"DORA Art. 9(4)(b) violation: ClusterRole uses wildcard (*) resource permissions. Least-privilege access requires explicit resource names."}}],"validationFailureAction":"Enforce"}}
-    policies.kyverno.io/description: DORA Article 9(4)(b) requires least-privilege
-      access controls. This policy blocks ClusterRoles that grant wildcard (*) permissions,
-      preventing privilege escalation through over-broad RBAC.
-  creationTimestamp: "2026-06-22T13:10:35Z"
-  generation: 1
   name: dora-art9-block-wildcard-rbac
-  resourceVersion: "162162"
-  uid: cf17dcf5-5e71-4a91-9afc-76f2bf63b4f6
+  annotations:
+    dora.article: "9(4)(b)"
+    dora.requirement: "REQ-003"
+    dora.coverage: "fully-automatable"
+    policies.kyverno.io/description: >-
+      DORA Article 9(4)(b) requires least-privilege access controls. This policy
+      blocks ClusterRoles granting wildcard (*) resource permissions, which would
+      permit privilege escalation through over-broad RBAC.
+    dora.fix: >-
+      v2 - the v1 condition used key: '*' with operator AnyIn. Kyverno treats a
+      wildcard in the KEY position as a glob PATTERN, not a literal string, so
+      the pattern '*' matched any non-empty resource list and the policy denied
+      EVERY ClusterRole that granted any resource at all. Verified: a ClusterRole
+      granting only "get pods" was rejected. The corrected condition uses the
+      JMESPath contains() function, which is evaluated before the operator and
+      compares literal values.
 spec:
-  admission: true
-  background: true
-  emitWarning: false
-  rules:
-  - match:
-      any:
-      - resources:
-          kinds:
-          - ClusterRole
-    name: block-wildcard-resources
-    skipBackgroundRequests: true
-    validate:
-      allowExistingViolations: true
-      deny:
-        conditions:
-          any:
-          - key: '*'
-            operator: AnyIn
-            value: '{{ request.object.rules[].resources[] }}'
-      message: 'DORA Art. 9(4)(b) violation: ClusterRole uses wildcard (*) resource
-        permissions. Least-privilege access requires explicit resource names.'
   validationFailureAction: Enforce
-status:
-  autogen: {}
-  conditions:
-  - lastTransitionTime: "2026-06-26T10:02:32Z"
-    message: Ready
-    reason: Succeeded
-    status: "True"
-    type: Ready
-  rulecount:
-    generate: 0
-    mutate: 0
-    validate: 1
-    verifyimages: 0
-  validatingadmissionpolicy:
-    generated: false
-    message: ""
+  background: true
+  rules:
+    - name: block-wildcard-resources
+      match:
+        any:
+          - resources:
+              kinds:
+                - ClusterRole
+                - Role
+      validate:
+        message: >-
+          DORA Art. 9(4)(b) violation [REQ-003]: {{ request.object.kind }}
+          '{{ request.object.metadata.name }}' grants wildcard (*) resource
+          permissions. Least-privilege access requires explicit resource names.
+        deny:
+          conditions:
+            any:
+              # contains() is a JMESPath function evaluated before the operator,
+              # so '*' is compared as a literal string rather than interpreted as
+              # a glob. The `[]` default guards ClusterRoles whose rules omit a
+              # resources field (aggregation rules, nonResourceURLs), where the
+              # expression would otherwise be null and the comparison would error.
+              - key: "{{ contains(request.object.rules[].resources[] || `[]`, '*') }}"
+                operator: Equals
+                value: true
+
+    # Scope note: this policy checks resource wildcards only, matching the scope
+    # of the Gatekeeper equivalent (dorawildcardrbac) so the two engines remain
+    # comparable. Wildcards in apiGroups and verbs are equally relevant to
+    # Art. 9(4)(b) least-privilege and are recorded as future work rather than
+    # added here, since widening scope mid-evaluation would invalidate the
+    # detection-accuracy comparison already collected.

@@ -1,0 +1,109 @@
+# Least-privilege RBAC for the compliance evidence hook.
+# Read-only on policy state, plus ConfigMap write in the target namespace so the
+# evidence document survives Job cleanup. Deliberately not cluster-admin --
+# REQ-004 blocks cluster-admin bindings to service accounts, so a broad grant
+# would be rejected by the project's own policy set.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dora-evidence-collector
+  namespace: dora-test
+  labels:
+    dora.io/component: compliance-evidence
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dora-evidence-collector
+  labels:
+    dora.io/component: compliance-evidence
+rules:
+  - apiGroups: ["wgpolicyk8s.io"]
+    resources: ["policyreports", "clusterpolicyreports"]
+    verbs: ["get", "list"]
+  # Explicit constraint kinds, NOT a wildcard. The first version used
+  # resources: ["*"] and was REJECTED at admission by this project's own
+  # REQ-003 policy (dora-art9-block-wildcard-rbac, DORA Art. 9(4)(b)). The
+  # ClusterRole was therefore never created, the ClusterRoleBinding pointed at
+  # nothing, every constraint query returned 403, and the evidence document was
+  # generated from an empty dataset. Listing each kind satisfies least-privilege
+  # and is what the regulation actually requires.
+  - apiGroups: ["constraints.gatekeeper.sh"]
+    resources:
+      - "doraassetmetadata"
+      - "doraauthtimeout"
+      - "dorablockprivileged"
+      - "dorachangeannotation"
+      - "doraclusteradmin"
+      - "doracriticality"
+      - "doradefaultsa"
+      - "doradependency"
+      - "doradescription"
+      - "doraencryptedstorageclass"
+      - "doraimagesignature"
+      - "doraimagetag"
+      - "doralabels"
+      - "doralogging"
+      - "doranonroot"
+      - "dorapdb"
+      - "doraprivileged"
+      - "doraregistries"
+      - "dorareplicas"
+      - "doraresourcelimits"
+      - "doraresourcequota"
+      - "dorarunasnonroot"
+      - "dorasealedsecrets"
+      - "doraseccompaudit"
+      - "dorasecuritycontext"
+      - "doratls"
+      - "dorawildcardrbac"
+    verbs: ["get", "list"]
+  - apiGroups: ["templates.gatekeeper.sh"]
+    resources: ["constrainttemplates"]
+    verbs: ["get", "list"]
+  - apiGroups: ["kyverno.io"]
+    resources: ["clusterpolicies", "policies"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dora-evidence-collector
+  labels:
+    dora.io/component: compliance-evidence
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dora-evidence-collector
+subjects:
+  - kind: ServiceAccount
+    name: dora-evidence-collector
+    namespace: dora-test
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dora-evidence-writer
+  namespace: dora-test
+  labels:
+    dora.io/component: compliance-evidence
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dora-evidence-writer
+  namespace: dora-test
+  labels:
+    dora.io/component: compliance-evidence
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dora-evidence-writer
+subjects:
+  - kind: ServiceAccount
+    name: dora-evidence-collector
+    namespace: dora-test
