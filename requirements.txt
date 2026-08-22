@@ -1,0 +1,17 @@
+# Python dependencies for the DORA-as-Code analysis and tooling scripts.
+#
+# Install on Ubuntu 24.04 / WSL2:
+#     pip install -r requirements.txt --break-system-packages
+#
+# The --break-system-packages flag is required because Ubuntu 24.04 marks the
+# system Python as externally managed (PEP 668). Use a virtual environment
+# instead if you prefer:
+#     python3 -m venv .venv && source .venv/bin/activate
+#     pip install -r requirements.txt
+
+numpy>=1.26          # analyse-benchmarks.py, generate-figures.py
+pandas>=2.0          # all analysis scripts
+scipy>=1.11          # Shapiro-Wilk, Friedman, Wilcoxon, Kruskal-Wallis
+PyYAML>=6.0          # validate-policies.py, generate-test-manifests.py
+tabulate>=0.9        # markdown tables in the generated analysis report
+matplotlib>=3.7      # generate-figures.py

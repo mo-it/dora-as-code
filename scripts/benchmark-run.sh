@@ -1,4 +1,11 @@
 #!/bin/bash
+##############################################################################
+# SUPERSEDED by scripts/benchmark-rcbd.sh.
+#
+# This is the fixed sequential harness. It produces valid measurements but
+# a sequential design confounds run order with configuration, which is why
+# the randomised complete block design replaced it. Kept for reference.
+##############################################################################
 # =============================================================================
 # DORA-as-Code: Phase 4 Benchmark (Fixed)
 # =============================================================================

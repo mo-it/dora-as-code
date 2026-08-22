@@ -1,4 +1,12 @@
 #!/bin/bash
+##############################################################################
+# SUPERSEDED by scripts/benchmark-rcbd.sh.
+#
+# Measured ArgoCD sync duration only. Sync duration proved to be a poorly
+# sensitive instrument for admission overhead, because admission is only
+# about 17 to 18 per cent of a sync cycle. The current harness records both
+# sync duration and admission-path latency.
+##############################################################################
 # =============================================================================
 # Phase 4: ArgoCD Sync-Time Benchmark
 # =============================================================================

@@ -3,7 +3,7 @@
 Source: `benchmark-rcbd-20260819-113918.csv`
 
 
-Configuration order was randomised independently within each block, so session drift and time-varying system load affect all three configurations equally instead of loading onto whichever ran first.
+Configuration order is balanced across blocks: all 3! = 6 orderings are used, each exactly twice, so every configuration runs in every within-block position an equal number of times. Session drift and time-varying system load therefore affect all three configurations equally instead of loading onto whichever ran first.
 
 
 ---
@@ -21,6 +21,22 @@ Observations: 141
 | Baseline (no policy engine) |  47 |     334.1 |    26.3 |       322   |     26   |      5   |      312 |    384   |    420.8 |      441 |      7.9 |
 | Kyverno                     |  48 |     348.6 |    28   |       338   |     18.8 |      8   |      325 |    419.9 |    444.1 |      454 |      8   |
 | OPA Gatekeeper              |  46 |     343.5 |    19   |       338.5 |     14.2 |      6.5 |      325 |    375.8 |    415.1 |      430 |      5.5 |
+
+
+## Normality of the distribution
+
+Shapiro-Wilk tests the null hypothesis that the sample is drawn from a normal distribution. Rejection means the normality assumption behind the t-test does not hold for this data, which is why the non-parametric Friedman and Wilcoxon tests are used below.
+
+
+| configuration               |   n |   shapiro_w |     p_value | normal_at_0.05   |   skewness |   kurtosis_excess |
+|:----------------------------|----:|------------:|------------:|:-----------------|-----------:|------------------:|
+| Baseline (no policy engine) |  47 |      0.7334 | 6.83318e-08 | False            |      2.072 |             4.571 |
+| Kyverno                     |  48 |      0.667  | 3.6274e-09  | False            |      2.371 |             5.061 |
+| OPA Gatekeeper              |  46 |      0.708  | 2.96324e-08 | False            |      2.727 |             8.719 |
+
+
+Normality is rejected at alpha = 0.05 for 3 of 3 configurations (largest p = < 0.001).
+
 
 
 ## Omnibus test
@@ -71,6 +87,22 @@ Observations: 144
 | OPA Gatekeeper              |  48 |    5231.3 | 22587.5 |      1982.5 |    131.8 |     67   |      681 |   2290.9 |  85182.9 |   158454 |    431.8 |
 
 
+## Normality of the distribution
+
+Shapiro-Wilk tests the null hypothesis that the sample is drawn from a normal distribution. Rejection means the normality assumption behind the t-test does not hold for this data, which is why the non-parametric Friedman and Wilcoxon tests are used below.
+
+
+| configuration               |   n |   shapiro_w |     p_value | normal_at_0.05   |   skewness |   kurtosis_excess |
+|:----------------------------|----:|------------:|------------:|:-----------------|-----------:|------------------:|
+| Baseline (no policy engine) |  47 |      0.6396 | 1.7016e-09  | False            |     -2.291 |             9.664 |
+| Kyverno                     |  47 |      0.5156 | 3.10182e-11 | False            |      3.575 |            19.21  |
+| OPA Gatekeeper              |  46 |      0.7647 | 3.47103e-07 | False            |      2.431 |             8.132 |
+
+
+Normality is rejected at alpha = 0.05 for 3 of 3 configurations (largest p = < 0.001).
+
+
+
 ## Omnibus test
 
 Friedman chi-squared = 8.0, df = 2, blocks = 12, p = 0.0183, Kendall's W = 0.3333.
@@ -93,11 +125,11 @@ Position within block: H = 1.101, p = 0.5767. Position effect detected: False. A
 
 ## Sensitivity: high-load cycles excluded
 
-Observations retained: 140. If the conclusions match the full dataset, the result is robust to transient load spikes.
+Observations retained: 137. If the conclusions match the full dataset, the result is robust to transient load spikes.
 
 
 | comparison                                    |   median_a_ms |   median_b_ms |   paired_median_diff_ms |   wilcoxon_w |     p_raw |   cliffs_delta | magnitude   |   vargha_delaney_a12 |   p_holm | significant_at_0.05   |
 |:----------------------------------------------|--------------:|--------------:|------------------------:|-------------:|----------:|---------------:|:------------|---------------------:|---------:|:----------------------|
-| Baseline (no policy engine) vs Kyverno        |          1888 |        1889   |                   -11.8 |         29.5 | 0.480469  |        -0.0783 | negligible  |               0.4608 | 0.480469 | False                 |
-| Baseline (no policy engine) vs OPA Gatekeeper |          1888 |        1982.5 |                   -96.5 |         13   | 0.0424805 |        -0.4829 | large       |               0.2586 | 0.127441 | False                 |
-| Kyverno vs OPA Gatekeeper                     |          1889 |        1982.5 |                   -87.8 |         13   | 0.0424805 |        -0.3858 | medium      |               0.3071 | 0.127441 | False                 |
+| Baseline (no policy engine) vs Kyverno        |          1889 |          1889 |                   -11.8 |         29.5 | 0.480469  |        -0.0629 | negligible  |               0.4685 | 0.480469 | False                 |
+| Baseline (no policy engine) vs OPA Gatekeeper |          1889 |          1990 |                  -103.5 |         13   | 0.0424805 |        -0.5005 | large       |               0.2498 | 0.127441 | False                 |
+| Kyverno vs OPA Gatekeeper                     |          1889 |          1990 |                   -98.8 |         13   | 0.0424805 |        -0.4192 | medium      |               0.2904 | 0.127441 | False                 |

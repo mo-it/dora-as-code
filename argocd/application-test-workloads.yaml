@@ -14,6 +14,18 @@ spec:
     path: manifests
     directory:
       recurse: true
+      # Exclude two subtrees that this Application must not manage:
+      #
+      #   benchmark/     owned by the dora-bench-compliant Application. Two
+      #                  Applications managing the same resources fight over
+      #                  ownership and produce spurious OutOfSync churn.
+      #
+      #   non-compliant/ deliberately violates one policy each. With automated
+      #                  sync these would retry and fail forever, burying real
+      #                  failures in noise. They are applied on demand by the
+      #                  detection sweep using kubectl --dry-run=server, which
+      #                  traverses the identical admission path.
+      exclude: '{benchmark/**,non-compliant/**}' 
   destination:
     server: https://kubernetes.default.svc
     namespace: dora-test

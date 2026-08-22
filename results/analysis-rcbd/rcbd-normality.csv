@@ -1,0 +1,7 @@
+metric,configuration,n,shapiro_w,p_value,normal_at_0.05,skewness,kurtosis_excess
+admission_ms,Baseline (no policy engine),47,0.7334,6.833178628152601e-08,False,2.072,4.571
+admission_ms,Kyverno,48,0.667,3.6274027783268552e-09,False,2.371,5.061
+admission_ms,OPA Gatekeeper,46,0.708,2.9632416306985463e-08,False,2.727,8.719
+argocd_sync_ms,Baseline (no policy engine),47,0.6396,1.7015984676991243e-09,False,-2.291,9.664
+argocd_sync_ms,Kyverno,47,0.5156,3.101820463573299e-11,False,3.575,19.21
+argocd_sync_ms,OPA Gatekeeper,46,0.7647,3.4710327445798896e-07,False,2.431,8.132

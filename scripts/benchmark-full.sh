@@ -1,4 +1,14 @@
 #!/bin/bash
+##############################################################################
+# SUPERSEDED. Do not use.
+#
+# This harness exited silently under `set -euo pipefail` whenever `grep`
+# returned exit code 1 on empty metrics output, so runs appeared to finish
+# when they had aborted partway. Replaced by benchmark-run.sh (which adds
+# || true on every grep/curl/kubectl) and then by benchmark-rcbd.sh, which
+# is the current harness. Retained because the failure is cited in the
+# dissertation.
+##############################################################################
 # =============================================================================
 # DORA-as-Code: Full Comparative Benchmark Harness
 # =============================================================================

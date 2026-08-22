@@ -312,6 +312,39 @@ def build_report(full, trimmed, order_df, warmup_n, run_id):
 
 # ------------------------------------------------- randomised block design (RCBD)
 
+def rcbd_normality(df, metric, exclude_high_load=True):
+    """Shapiro-Wilk per configuration on the RCBD data.
+
+    Purpose is evidential, not gating. The module's default comparison is the
+    parametric t-test, which assumes the samples are drawn from a normal
+    distribution. That assumption is tested here and reported so the switch to
+    Friedman and Wilcoxon is justified by evidence rather than by preference.
+    """
+    work = df.copy()
+    if exclude_high_load:
+        bad = ["clock_error"] if metric == "admission_ms" else ["outlier"]
+        work = work[~work["quality_flag"].isin(bad)]
+    work = work[work[metric] >= 0]
+
+    rows = []
+    for cfg in CONFIGS:
+        x = work[work["configuration"] == cfg][metric].astype(float).values
+        if len(x) < 3:
+            continue
+        w, p = stats.shapiro(x)
+        rows.append({
+            "metric": metric,
+            "configuration": LABELS.get(cfg, cfg),
+            "n": int(len(x)),
+            "shapiro_w": round(float(w), 4),
+            "p_value": float(p),
+            "normal_at_0.05": bool(p > 0.05),
+            "skewness": round(float(stats.skew(x)), 3),
+            "kurtosis_excess": round(float(stats.kurtosis(x)), 3),
+        })
+    return pd.DataFrame(rows)
+
+
 def analyse_rcbd(df, metric, exclude_high_load=False):
     """Analysis for the randomised complete block design.
 
@@ -423,9 +456,11 @@ def build_rcbd_report(results, path):
     L = ["# Phase 4 Benchmark: Randomised Complete Block Design\n"]
     L.append(f"Source: `{os.path.basename(path)}`\n")
     L.append(
-        "\nConfiguration order was randomised independently within each block, "
-        "so session drift and time-varying system load affect all three "
-        "configurations equally instead of loading onto whichever ran first.\n"
+        "\nConfiguration order is balanced across blocks: all 3! = 6 orderings "
+        "are used, each exactly twice, so every configuration runs in every "
+        "within-block position an equal number of times. Session drift and "
+        "time-varying system load therefore affect all three configurations "
+        "equally instead of loading onto whichever ran first.\n"
     )
 
     for metric, label in [("admission_ms", "Admission-path latency"),
@@ -440,6 +475,25 @@ def build_rcbd_report(results, path):
         L.append(f"\nObservations: {main_r['n_observations']}\n")
         L.append("\n## Descriptive statistics\n")
         L.append(main_r["descriptives"].to_markdown(index=False))
+
+        norm = block.get("normality")
+        if norm is not None and not norm.empty:
+            L.append("\n\n## Normality of the distribution\n")
+            L.append(
+                "Shapiro-Wilk tests the null hypothesis that the sample is drawn "
+                "from a normal distribution. Rejection means the normality "
+                "assumption behind the t-test does not hold for this data, which "
+                "is why the non-parametric Friedman and Wilcoxon tests are used "
+                "below.\n\n"
+            )
+            L.append(norm.drop(columns=["metric"]).to_markdown(index=False))
+            worst = norm["p_value"].max()
+            rejected = int((norm["p_value"] <= 0.05).sum())
+            L.append(
+                f"\n\nNormality is rejected at alpha = 0.05 for "
+                f"{rejected} of {len(norm)} configurations "
+                f"(largest p = {fmt_p(worst)}).\n"
+            )
 
         o = main_r["omnibus"]
         L.append("\n\n## Omnibus test\n")
@@ -484,6 +538,7 @@ def run_rcbd_mode(path, out_dir):
 
     os.makedirs(out_dir, exist_ok=True)
     results = {}
+    normality_frames = []
     for metric in ["admission_ms", "argocd_sync_ms"]:
         if metric not in df.columns:
             continue
@@ -499,8 +554,17 @@ def run_rcbd_mode(path, out_dir):
             f"{out_dir}/rcbd-{metric}-pairwise.csv", index=False)
         all_r["blocked"].to_csv(f"{out_dir}/rcbd-{metric}-block-medians.csv")
 
+        norm = rcbd_normality(df, metric, exclude_high_load=True)
+        if not norm.empty:
+            normality_frames.append(norm)
+            results[metric]["normality"] = norm
+
     if not results:
         sys.exit("ERROR: no usable metric columns found.")
+
+    if normality_frames:
+        pd.concat(normality_frames, ignore_index=True).to_csv(
+            f"{out_dir}/rcbd-normality.csv", index=False)
 
     report = build_rcbd_report(results, path)
     with open(f"{out_dir}/rcbd-analysis-report.md", "w") as fh:
