@@ -1,13 +1,13 @@
 # Policy Expressiveness Coverage Matrix
 
 
-Requirements assessed: **29**
+Requirements assessed: **30**
 
 
 | Coverage measure | Kyverno | OPA Gatekeeper |
 |---|---|---|
-| Binary coverage (expressible at all) | 86.2% | 86.2% |
-| Effective coverage (directly enforced) | 58.6% | 58.6% |
+| Binary coverage (expressible at all) | 83.3% | 83.3% |
+| Effective coverage (directly enforced) | 56.7% | 56.7% |
 
 **DIRECT** — the policy inspects the actual resource field the requirement
 concerns; enforcement is technical. **ASSERTED** — the policy checks an
@@ -46,6 +46,7 @@ enforcement is procedural. **ABSENT** — no working policy.
 | REQ-021 | 11(3) | Test ICT resilience through scenario-based testing | ABSENT | ABSENT |
 | REQ-014 | 12(1) | Establish backup and restoration procedures | ABSENT | ABSENT |
 | REQ-015 | 13(1) | Implement ICT change management processes | ASSERTED | ASSERTED |
+| REQ-029 | 14(1)-(3) | Establish crisis communication plans and designate a communication lea | ABSENT | ABSENT |
 | REQ-022 | 15(1) | Verify container image provenance and integrity | ASSERTED | ASSERTED |
 | REQ-023b | 15(1) | Restrict container images to pre-approved registries | DIRECT | DIRECT |
 
@@ -61,4 +62,5 @@ enforcement is procedural. **ABSENT** — no working policy.
 - **REQ-021** — classified not-automatable in the requirements register
 - **REQ-014** — classified not-automatable in the requirements register
 - **REQ-015** — checks change-management annotations; cannot verify a change ticket exists or was approved
+- **REQ-029** — classified not-automatable in the requirements register
 - **REQ-022** — checks dora.io/image-signature-verified annotation; no cryptographic verification performed | Kyverno: native verifyImages rule type supports Cosign and Notary signature verification. Gatekeeper: no equivalent; requires an external data provider via the externaldata API.

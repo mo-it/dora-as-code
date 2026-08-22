@@ -32,8 +32,8 @@ Three of the four things measured came out **identical** between the two tools.
 
 | What was measured | Kyverno | OPA Gatekeeper | Verdict |
 |---|---|---|---|
-| Requirements expressible at all | 86.2% (25 of 29) | 86.2% (25 of 29) | Tied |
-| Requirements genuinely enforced | 58.6% (17 of 29) | 58.6% (17 of 29) | Tied |
+| Requirements expressible at all | 83.3% (25 of 30) | 83.3% (25 of 30) | Tied |
+| Requirements genuinely enforced | 56.7% (17 of 30) | 56.7% (17 of 30) | Tied |
 | Detection accuracy (precision, recall, F1) | 1.000 | 1.000 | Tied |
 | Extra time added to admission | about 14.5 ms | about 9.4 ms | No meaningful difference |
 
@@ -43,10 +43,10 @@ The headline conclusion is therefore **not** the one the proposal expected. Choo
 
 This is the most important number in the project, so it is worth slowing down.
 
-- **Binary coverage (86.2%)** answers "can the tool express this rule at all?"
-- **Effective coverage (58.6%)** answers "does the rule actually inspect the real thing?"
+- **Binary coverage (83.3%)** answers "can the tool express this rule at all?"
+- **Effective coverage (56.7%)** answers "does the rule actually inspect the real thing?"
 
-The 27.6 point gap between them is the finding. Eight of the requirements can only be checked by reading a **label that the user themselves wrote**, claiming they are compliant.
+The 26.7 point gap between them is the finding. Eight of the requirements can only be checked by reading a **label that the user themselves wrote**, claiming they are compliant.
 
 The clearest example is image signing. The policy checks for a label saying `dora.io/image-signature-verified: "true"`. But anyone can type that label onto an unsigned image. The policy checks that a claim was made. It does not check that the claim is true.
 
@@ -105,7 +105,7 @@ detection sweep must not be cited.
 
 ### The requirements register
 
-`requirements/dora-requirements-register.csv` is the spine of the whole project. It has 29 rows, one per requirement pulled out of DORA Articles 5 to 15. Each row records which article it came from, what it means in technical terms, which Kubernetes object it applies to, and which policy enforces it in each tool.
+`requirements/dora-requirements-register.csv` is the spine of the whole project. It has 30 rows, one per requirement pulled out of DORA Articles 5 to 15. All eleven articles in that range are represented. Each row records which article it came from, what it means in technical terms, which Kubernetes object it applies to, and which policy enforces it in each tool.
 
 Each requirement is sorted into one of four groups:
 
@@ -113,7 +113,7 @@ Each requirement is sorted into one of four groups:
 |---|---|---|
 | Fully automatable | 12 | A policy can check the real setting |
 | Partially automatable | 13 | A policy can check that something was declared, but not that it is true |
-| Not automatable | 3 | This is a human process, such as risk assessment |
+| Not automatable | 4 | This is a human process, such as risk assessment or crisis communication |
 | Not implemented | 1 | Honestly recorded as a gap, not quietly dropped |
 
 The single not-implemented item is REQ-008, network segmentation. It was originally claimed as covered. When the register was checked mechanically, the policies it named turned out not to exist. It is recorded as a gap rather than removed, because hiding it would be the more serious error.
@@ -227,7 +227,17 @@ This step needs no cluster. It reads the committed result files and rewrites eve
 python3 scripts/generate-figures.py
 ```
 
-### 8. Clean up afterwards
+### 8. Reproduce the controller-path finding
+
+This also needs no cluster. It replays the broken and fixed policy versions against identical inputs and shows that the broken version returned the same answer whatever it was given:
+
+```bash
+curl -sL -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
+chmod +x opa
+python3 scripts/verify-controller-path-defect.py --opa ./opa
+```
+
+### 9. Clean up afterwards
 
 ```bash
 kubectl delete deployments --all -n dora-test
@@ -261,6 +271,7 @@ Each round repeats four times, giving 48 measurements per configuration and 144 
 - **Every test file breaks only one rule.** Deliberately tricky cases were not tested, such as a file saying "do not run as root" while also naming the root user, or setting a minimum without a maximum. These are named here rather than left for a reader to discover.
 - **The perfect 1.000 accuracy scores describe this test suite**, not all possible inputs. A test suite can only find false alarms for an object type if it contains a correct example of that object type. See Finding 6.
 - **42 files are scored, 43 exist.** `manifests/compliant/req003-compliant.yaml` was added later, during the fix for Finding 5, and was verified directly rather than through the automated scoring loop. It is therefore not listed in `expected-results.csv`. This is a deliberate, recorded decision, not an oversight.
+- **One article yields nothing enforceable.** Article 14 covers crisis communication plans, staff communication policies, and naming a person responsible for public and media disclosure. All of it is discharged by people and paperwork, so no admission policy can evidence it. It is recorded in the register as not automatable rather than left out, so the register covers all eleven articles in scope.
 - **The PreSync validation hook was not built.** The original proposal described checking policies before ArgoCD applies anything. Enforcement here happens at the cluster door instead. Finding 4 is the argument for why the earlier check would be valuable, so this is treated as future work rather than a quiet omission.
 
 ---
@@ -275,7 +286,7 @@ Each round repeats four times, giving 48 measurements per configuration and 144 
 
 ## Licence
 
-Released under the MIT Licence. See the LICENSE file for the full text.
+Released under the MIT Licence. See the LICENSE file for the full text, and CITATION.cff for how to cite this work.
 
 In short: you may use, copy, modify and redistribute this work, including
 commercially, provided you keep the copyright notice. It is supplied with no

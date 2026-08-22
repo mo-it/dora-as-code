@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 *.tmp
 .DS_Store
+
+# OPA binary, fetched on demand by verify-controller-path-defect.py
+/opa

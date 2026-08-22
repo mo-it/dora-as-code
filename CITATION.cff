@@ -1,0 +1,50 @@
+cff-version: 1.2.0
+title: >-
+  DORA-as-Code: A Comparative Evaluation of Policy-as-Code Tools
+  for Automated EU Regulatory Compliance in GitOps-Managed
+  Kubernetes Environments
+message: >-
+  If you use this software or the accompanying data, please cite
+  both the dissertation and this repository.
+type: software
+authors:
+  - given-names: Mohit Kumar
+    family-names: Somashekar
+    email: a00047340@mytudublin.ie
+    affiliation: >-
+      School of Enterprise Computing and Digital Transformation,
+      Technological University Dublin, Tallaght Campus
+repository-code: https://github.com/mo-it/dora-as-code
+license: MIT
+version: 1.0-dissertation
+date-released: '2026-08-22'
+keywords:
+  - DORA
+  - policy-as-code
+  - GitOps
+  - Kubernetes
+  - Kyverno
+  - OPA Gatekeeper
+  - admission control
+  - regulatory compliance
+  - DevSecOps
+abstract: >-
+  Research artefacts accompanying an MSc DevOps dissertation that
+  maps EU Digital Operational Resilience Act (Regulation (EU)
+  2022/2554) ICT risk management requirements from Articles 5 to 15
+  onto executable Kubernetes admission policies, and compares
+  Kyverno and OPA Gatekeeper enforcing them within an ArgoCD GitOps
+  pipeline. The repository contains a 30-entry DORA requirements
+  register, 25 policies implemented in each engine, a generated
+  ground-truth test suite, a randomised complete block performance
+  benchmark, a compliance evidence hook, and the analysis tooling
+  needed to reproduce every reported result.
+references:
+  - type: legislation
+    title: >-
+      Regulation (EU) 2022/2554 on digital operational resilience
+      for the financial sector (DORA)
+    authors:
+      - name: European Parliament and Council of the European Union
+    year: 2022
+    url: https://eur-lex.europa.eu/eli/reg/2022/2554/oj

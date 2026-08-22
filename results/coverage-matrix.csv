@@ -26,5 +26,6 @@ REQ-024,11(5),Implement graceful degradation capabilities,resilience,ASSERTED,AS
 REQ-021,11(3),Test ICT resilience through scenario-based testing,resilience,ABSENT,ABSENT,classified not-automatable in the requirements register
 REQ-014,12(1),Establish backup and restoration procedures,resilience,ABSENT,ABSENT,classified not-automatable in the requirements register
 REQ-015,13(1),Implement ICT change management processes,change-management,ASSERTED,ASSERTED,checks change-management annotations; cannot verify a change ticket exists or was approved
+REQ-029,14(1)-(3),Establish crisis communication plans and designate a communication lea,communication,ABSENT,ABSENT,classified not-automatable in the requirements register
 REQ-022,15(1),Verify container image provenance and integrity,supply-chain,ASSERTED,ASSERTED,checks dora.io/image-signature-verified annotation; no cryptographic verification performed | Kyverno: native verifyImages rule type supports Cosign and Notary signature verification. Gatekeeper: no equivalent; requires an external data provider via the externaldata API.
 REQ-023b,15(1),Restrict container images to pre-approved registries,supply-chain,DIRECT,DIRECT,
