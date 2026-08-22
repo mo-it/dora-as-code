@@ -2,7 +2,8 @@
 
 **A Comparative Evaluation of Policy-as-Code Tools for Automated EU Regulatory Compliance in GitOps-Managed Kubernetes Environments**
 
-MSc DevOps Dissertation — Mohit Kumar Somashekar
+MSc DevOps Dissertation 
+-Mohit Kumar Somashekar
 Technological University Dublin (Tallaght Campus)
 
 ## Overview
