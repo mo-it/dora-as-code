@@ -290,6 +290,27 @@ def main():
     open(f"{args.out}/citation-audit.md", "w").write(report)
     print(report)
 
+    # Article coverage: every article in scope should have at least one row,
+    # EXCEPT Article 15, which binds the ESAs and therefore cannot yield an
+    # entity requirement. Reporting this explicitly stops a future reader
+    # mistaking the absence for the silent omission found for Article 14.
+    import collections
+    reg = list(csv.DictReader(open(args.register)))
+    seen = collections.Counter(
+        int(re.search(r"(\d+)", r["dora_article"]).group(1)) for r in reg)
+    corpus2 = json.load(open(args.corpus))
+    gaps = []
+    for a in range(5, 16):
+        if seen.get(a):
+            continue
+        if (corpus2.get(str(a)) or {}).get("addressee") == "ESA":
+            print(f"Article {a}: no requirement, correct "
+                  f"(binds the ESAs, not financial entities).")
+        else:
+            gaps.append(a)
+    if gaps:
+        print(f"WARNING: articles with no register entry: {gaps}")
+
     errs = sum(1 for r in results if r["severity"] == "ERROR")
     warns = sum(1 for r in results if r["severity"] == "WARN")
     print(f"\nWrote {args.out}/")

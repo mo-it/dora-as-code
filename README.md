@@ -32,8 +32,8 @@ Three of the four things measured came out **identical** between the two tools.
 
 | What was measured | Kyverno | OPA Gatekeeper | Verdict |
 |---|---|---|---|
-| Requirements expressible at all | 83.3% (25 of 30) | 83.3% (25 of 30) | Tied |
-| Requirements genuinely enforced | 43.3% (13 of 30) | 43.3% (13 of 30) | Tied |
+| Requirements expressible at all | 75.8% (25 of 33) | 75.8% (25 of 33) | Tied |
+| Requirements genuinely enforced | 39.4% (13 of 33) | 39.4% (13 of 33) | Tied |
 | Detection accuracy (precision, recall, F1) | 1.000 | 1.000 | Tied |
 | Extra time added to admission | about 14.5 ms | about 9.4 ms | No meaningful difference |
 
@@ -43,12 +43,12 @@ The headline conclusion is therefore **not** the one the proposal expected. Choo
 
 This is the most important number in the project, so it is worth slowing down.
 
-- **Binary coverage (83.3%)** answers "can the tool express this rule at all?"
-- **Effective coverage (43.3%)** answers "does the rule actually inspect the real thing?"
+- **Binary coverage (75.8%)** answers "can the tool express this rule at all?"
+- **Effective coverage (39.4%)** answers "does the rule actually inspect the real thing?"
 
 The line between the two is drawn by a single rule, applied by a script rather than by hand: a policy counts as direct when it inspects a field that governs how the workload actually runs, and as asserted when it inspects only metadata that a person typed in. Both engines are classified independently from their own source, and they come out identical.
 
-The 40 point gap between them is the finding. Twelve of the requirements, close to half, can only be checked by reading a **label that the user themselves wrote**, claiming they are compliant.
+The 36 point gap between them is the finding. Twelve of the requirements can only be checked by reading a **label that the user themselves wrote**, claiming they are compliant.
 
 The clearest example is image signing. The policy checks for a label saying `dora.io/image-signature-verified: "true"`. But anyone can type that label onto an unsigned image. The policy checks that a claim was made. It does not check that the claim is true.
 
@@ -107,7 +107,7 @@ detection sweep must not be cited.
 
 ### The requirements register
 
-`requirements/dora-requirements-register.csv` is the spine of the whole project. It has 30 rows, one per requirement pulled out of DORA Articles 5 to 15. All eleven articles in that range are represented. Each row records which article it came from, what it means in technical terms, which Kubernetes object it applies to, and which policy enforces it in each tool.
+`requirements/dora-requirements-register.csv` is the spine of the whole project. It has 33 rows, one per requirement pulled out of DORA Articles 5 to 15. All eleven articles in that range are represented. Each row records which article it came from, what it means in technical terms, which Kubernetes object it applies to, and which policy enforces it in each tool.
 
 Each requirement is sorted into one of four groups:
 
@@ -115,8 +115,10 @@ Each requirement is sorted into one of four groups:
 |---|---|---|
 | Fully automatable | 11 | A policy can check the real setting |
 | Partially automatable | 14 | A policy can check that something was declared, but not that it is true |
-| Not automatable | 4 | This is a human process, such as risk assessment or crisis communication |
+| Not automatable | 7 | This is a human process, such as risk assessment or crisis communication |
 | Not implemented | 1 | Honestly recorded as a gap, not quietly dropped |
+
+Every citation in the register is checked against the DORA text by `scripts/verify-dora-citations.py`, which reports zero errors. Article 15 alone carries no requirement, and that is correct rather than an omission: it instructs the European Supervisory Authorities to write technical standards and places no duty on a regulated firm at all.
 
 The single not-implemented item is REQ-008, network segmentation. It was originally claimed as covered. When the register was checked mechanically, the policies it named turned out not to exist. It is recorded as a gap rather than removed, because hiding it would be the more serious error.
 

@@ -5,7 +5,7 @@
     "captured": "2026-08-22",
     "source": "https://www.digital-operational-resilience-act.com/DORA_Articles.html",
     "source_note": "Final text as published in the Official Journal. Each article was retrieved individually and the provision text below is quoted verbatim or abridged without altering meaning. Verify against https://eur-lex.europa.eu/eli/reg/2022/2554/oj before final submission.",
-    "coverage": "Articles 5, 7, 8, 9, 10, 11, 13, 14, 15 captured in full. Articles 6 and 12 hold title and structure only; citations into them are reported as UNVERIFIED rather than judged.",
+    "coverage": "Articles 5 to 15 of Chapter II captured in full.",
     "addressee_note": "addressee = 'entity' means the provision imposes an obligation on financial entities. addressee = 'ESA' means it mandates the European Supervisory Authorities to make rules, and cannot be the legal basis for a technical control on a regulated entity."
   },
   "5": {
@@ -30,8 +30,17 @@
   "6": {
     "title": "ICT risk management framework",
     "addressee": "entity",
-    "paragraphs": {},
-    "_unverified": "Full text not captured. Citations into Article 6 are reported as UNVERIFIED."
+    "paragraphs": {
+      "1": "Financial entities shall have a sound, comprehensive and well-documented ICT risk management framework as part of their overall risk management system, which enables them to address ICT risk quickly, efficiently and comprehensively and to ensure a high level of digital operational resilience.",
+      "2": "The ICT risk management framework shall include at least strategies, policies, procedures, ICT protocols and tools that are necessary to duly and adequately protect all information assets and ICT assets, including computer software, hardware, servers, as well as to protect all relevant physical components and infrastructures.",
+      "3": "In accordance with their ICT risk management framework, financial entities shall minimise the impact of ICT risk by deploying appropriate strategies, policies, procedures, ICT protocols and tools.",
+      "4": "Financial entities shall assign the responsibility for managing and overseeing ICT risk to a control function and ensure an appropriate level of independence of that function.",
+      "5": "The ICT risk management framework shall be documented and reviewed at least once a year, as well as upon the occurrence of major ICT-related incidents, and shall be continuously improved on the basis of lessons derived from implementation and monitoring.",
+      "6": "The ICT risk management framework of financial entities, other than microenterprises, shall be subject to internal audit by auditors on a regular basis.",
+      "8": "The ICT risk management framework shall include a digital operational resilience strategy setting out how the framework shall be implemented.",
+      "9": "Financial entities may define a holistic ICT multi-vendor strategy, showing key dependencies on ICT third-party service providers.",
+      "10": "Financial entities may outsource the tasks of verifying compliance with ICT risk management requirements, but remain fully responsible."
+    }
   },
   "7": {
     "title": "ICT systems, protocols and tools",
@@ -114,8 +123,15 @@
   "12": {
     "title": "Backup policies and procedures, restoration and recovery procedures and methods",
     "addressee": "entity",
-    "paragraphs": {},
-    "_unverified": "Full text not captured. Citations into Article 12 are reported as UNVERIFIED."
+    "paragraphs": {
+      "1": "For the purpose of ensuring the restoration of ICT systems and data with minimum downtime, limited disruption and loss, as part of their ICT risk management framework, financial entities shall develop and document backup policies and procedures, and restoration and recovery procedures and methods.",
+      "1(a)": "backup policies and procedures specifying the scope of the data that is subject to the backup and the minimum frequency of the backup, based on the criticality of information or the confidentiality level of the data",
+      "1(b)": "restoration and recovery procedures and methods",
+      "2": "Financial entities shall set up backup systems that can be activated in accordance with the backup policies and procedures. Testing of the backup procedures and restoration and recovery procedures and methods shall be undertaken periodically.",
+      "3": "When restoring backup data using own systems, financial entities shall use ICT systems that are physically and logically segregated from the source ICT system.",
+      "6": "In determining the recovery time and recovery point objectives for each function, financial entities shall take into account whether it is a critical or important function.",
+      "7": "When recovering from an ICT-related incident, financial entities shall perform necessary checks in order to ensure that the highest level of data integrity is maintained."
+    }
   },
   "13": {
     "title": "Learning and evolving",

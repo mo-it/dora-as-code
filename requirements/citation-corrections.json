@@ -1,0 +1,104 @@
+{
+  "corrections": {
+    "REQ-013": {
+      "article": "8",
+      "subsection": "1",
+      "rationale": "Art. 6(1) has no lettered points. Art. 8(1) is the classification duty: 'identify, classify and adequately document all ICT supported business functions ... and ICT assets'."
+    },
+    "REQ-016": {
+      "article": "8",
+      "subsection": "2",
+      "rationale": "Art. 7 has no numbered paragraphs. Art. 8(2) is the continuous risk-identification duty: 'identify all sources of ICT risk ... assess cyber threats and ICT vulnerabilities'."
+    },
+    "REQ-022": {
+      "article": "9",
+      "subsection": "3(c)",
+      "rationale": "Art. 15 binds the ESAs, not entities. Art. 9(3)(c) requires solutions that 'prevent ... the impairment of the authenticity and integrity' of data; image signing is an authenticity control."
+    },
+    "REQ-023b": {
+      "article": "9",
+      "subsection": "3(c)",
+      "rationale": "Art. 15 binds the ESAs, not entities. Restricting image sources is an authenticity and integrity control under Art. 9(3)(c)."
+    },
+    "REQ-012": {
+      "article": "8",
+      "subsection": "6",
+      "rationale": "Art. 5(2)(a) is the management body's ultimate responsibility for ICT risk. Art. 8(6) is the literal inventory duty: 'financial entities shall maintain relevant inventories'."
+    },
+    "REQ-025": {
+      "article": "8",
+      "subsection": "1",
+      "rationale": "Art. 5(2)(d) is the resilience strategy. Art. 8(1) requires entities to 'adequately document all ICT supported business functions ... and ICT assets'."
+    },
+    "REQ-027": {
+      "article": "8",
+      "subsection": "4",
+      "rationale": "Art. 6(2) concerns the framework's contents. Art. 8(4) requires entities to 'map the configuration ... and the links and interdependencies between the different information assets and ICT assets'."
+    },
+    "REQ-008": {
+      "article": "9",
+      "subsection": "4(b)",
+      "rationale": "Art. 9(3)(a) concerns security of data transfer. Art. 9(4)(b) is the network provision: infrastructure must be designed so it can be 'instantaneously severed or segmented'."
+    },
+    "REQ-028": {
+      "article": "9",
+      "subsection": "4(b)",
+      "rationale": "Art. 9(3)(b) concerns data corruption risk. Art. 9(4)(b) covers isolation of information assets; compute segregation sits with it."
+    },
+    "REQ-010": {
+      "article": "9",
+      "subsection": "4(c)",
+      "rationale": "Art. 9(4)(a) is the duty to document an information security policy. Art. 9(4)(c) limits access 'to what is required for legitimate and approved functions and activities only'."
+    },
+    "REQ-011": {
+      "article": "9",
+      "subsection": "4(c)",
+      "rationale": "As REQ-010: 9(4)(a) is a documentation duty; host isolation restricts privilege under 9(4)(c)."
+    },
+    "REQ-018": {
+      "article": "9",
+      "subsection": "4(c)",
+      "rationale": "As REQ-010: filesystem and capability hardening restricts privilege under 9(4)(c), not the policy-documentation duty in 9(4)(a)."
+    },
+    "REQ-003": {
+      "article": "9",
+      "subsection": "4(c)",
+      "rationale": "Art. 9(4)(b) is network segmentation. Art. 9(4)(c) is the least-privilege provision and expressly addresses 'access rights and ... a sound administration thereof'."
+    },
+    "REQ-004": {
+      "article": "9",
+      "subsection": "4(c)",
+      "rationale": "As REQ-003: RBAC privilege escalation is an access-rights control under 9(4)(c)."
+    },
+    "REQ-026": {
+      "article": "9",
+      "subsection": "4(d)",
+      "rationale": "Art. 9(4)(c) governs access limitation. Art. 9(4)(d) is the authentication provision: 'policies and protocols for strong authentication mechanisms'."
+    },
+    "REQ-006": {
+      "article": "11",
+      "subsection": "2(a)",
+      "rationale": "Art. 11(1) establishes the business continuity policy. Art. 11(2)(a) is the operative duty to 'ensure the continuity of the financial entity's critical or important functions'; resource governance prevents contention that breaks continuity."
+    },
+    "REQ-007": {
+      "article": "11",
+      "subsection": "5",
+      "rationale": "Art. 11(1) establishes the policy. Art. 11(5) requires ICT assets be used 'with regard to adequately ensuring the redundancy of all critical components'; minimum replicas is redundancy."
+    },
+    "REQ-021": {
+      "article": "11",
+      "subsection": "6(a)",
+      "rationale": "Art. 11(3) concerns response and recovery plans. Art. 11(6)(a) is the testing duty: 'test the ICT business continuity plans and the ICT response and recovery plans ... at least yearly'."
+    },
+    "REQ-015": {
+      "article": "9",
+      "subsection": "4(e)",
+      "rationale": "Art. 13(1) concerns gathering information on vulnerabilities and threats. Art. 9(4)(e) is expressly ICT change management: changes 'recorded, tested, assessed, approved, implemented and verified in a controlled manner'."
+    }
+  },
+  "confirmed_correct": {
+    "REQ-017": "Art. 8(1) already correct: it is the identify-and-document duty. Heuristic preferred 8(4) on term overlap.",
+    "REQ-023": "Art. 9(4)(d) already correct: it expressly covers 'protection measures of cryptographic keys'. Heuristic false positive.",
+    "REQ-014": "Art. 12(1) already correct: it is the duty to develop and document backup and restoration procedures. Heuristic false positive."
+  }
+}
