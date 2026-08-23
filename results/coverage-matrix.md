@@ -7,7 +7,7 @@ Requirements assessed: **30**
 | Coverage measure | Kyverno | OPA Gatekeeper |
 |---|---|---|
 | Binary coverage (expressible at all) | 83.3% | 83.3% |
-| Effective coverage (directly enforced) | 56.7% | 56.7% |
+| Effective coverage (directly enforced) | 43.3% | 43.3% |
 
 **DIRECT** — the policy inspects the actual resource field the requirement
 concerns; enforcement is technical. **ASSERTED** — the policy checks an
@@ -19,9 +19,9 @@ enforcement is procedural. **ABSENT** — no working policy.
 
 | REQ | Article | Requirement | Kyverno | Gatekeeper |
 |---|---|---|---|---|
-| REQ-012 | 5(2)(a) | Maintain ICT asset inventory | DIRECT | DIRECT |
-| REQ-025 | 5(2)(d) | Maintain documentation of ICT systems | DIRECT | DIRECT |
-| REQ-013 | 6(1)(b) | Identify and classify ICT assets by criticality | DIRECT | DIRECT |
+| REQ-012 | 5(2)(a) | Maintain ICT asset inventory | ASSERTED | ASSERTED |
+| REQ-025 | 5(2)(d) | Maintain documentation of ICT systems | ASSERTED | ASSERTED |
+| REQ-013 | 6(1)(b) | Identify and classify ICT assets by criticality | ASSERTED | ASSERTED |
 | REQ-027 | 6(2) | Map ICT asset dependencies and interconnections | ASSERTED | ASSERTED |
 | REQ-016 | 7(1) | Establish ICT risk assessment process | ABSENT | ABSENT |
 | REQ-017 | 8(1) | Identify and document all ICT assets supporting business functions | ASSERTED | ASSERTED |
@@ -29,7 +29,7 @@ enforcement is procedural. **ABSENT** — no working policy.
 | REQ-002 | 9(2) | Ensure integrity and confidentiality of data in transit | DIRECT | DIRECT |
 | REQ-009 | 9(2) | Ensure data integrity through immutable container images | DIRECT | DIRECT |
 | REQ-008 | 9(3)(a) | Implement network segmentation controls | ABSENT | ABSENT |
-| REQ-028 | 9(3)(b) | Implement logical segregation of ICT assets | DIRECT | DIRECT |
+| REQ-028 | 9(3)(b) | Implement logical segregation of ICT assets | ASSERTED | ASSERTED |
 | REQ-010 | 9(4)(a) | Restrict container runtime privileges - non-root execution | DIRECT | DIRECT |
 | REQ-011 | 9(4)(a) | Prevent container breakout - host isolation | DIRECT | DIRECT |
 | REQ-018 | 9(4)(a) | Enforce security hardening on container filesystems | DIRECT | DIRECT |

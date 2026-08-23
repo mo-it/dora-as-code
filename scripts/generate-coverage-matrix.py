@@ -45,6 +45,7 @@ USAGE
 
 import argparse
 import csv
+import json
 import os
 import re
 import sys
@@ -75,17 +76,131 @@ NATIVE_GAP = {
 }
 
 
+
+# ---------------------------------------------------------------------------
+# Coverage class is DERIVED from policy source, not from a hand-maintained list.
+#
+# Rule (stated in the design chapter and applied mechanically here):
+#
+#   DIRECT    the validate logic inspects at least one field that governs
+#             runtime behaviour (a spec field, or a top-level functional field
+#             such as ClusterRole.rules or Secret.type).
+#
+#   ASSERTED  the validate logic inspects only metadata that a human wrote
+#             (labels or annotations). Such a policy verifies that a claim was
+#             made, not that the claim is true.
+#
+#   ABSENT    no policy exists, or the requirement is not automatable.
+#
+# `kind` and `apiVersion` are treated as non-functional: they identify the
+# object under test rather than describing its configuration.
+#
+# Deriving this rather than listing it is deliberate. An earlier hand-maintained
+# list classified REQ-028 as DIRECT while REQ-024, which has the identical
+# annotation-proxy shape, was ASSERTED. A mapping that nothing mechanically
+# consumes drifts -- the same failure this study documents for the requirements
+# register itself.
+# ---------------------------------------------------------------------------
+NON_FUNCTIONAL_PREFIXES = ("metadata", "kind", "apiVersion")
+
+
+def _pattern_paths(obj, prefix=""):
+    """Every leaf path referenced by a Kyverno validate pattern."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == "message":
+                continue
+            # Kyverno conditional-anchor syntax: =(field), &(field), ~(field)
+            key = re.sub(r"^[=&~^<>!+]?\((.*)\)$", r"\1", str(k))
+            yield from _pattern_paths(v, f"{prefix}.{key}" if prefix else key)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _pattern_paths(v, prefix)
+    else:
+        if prefix:
+            yield prefix
+
+
+def _jmespath_refs(blob):
+    """Object paths referenced inside {{ ... }} expressions."""
+    out = []
+    for expr in re.findall(r"\{\{(.*?)\}\}", blob, re.S):
+        for m in re.findall(r"request\.object\.([A-Za-z0-9_.\[\]]+)", expr):
+            out.append(m.strip("."))
+    return out
+
+
+def derive_kyverno_class(policy_path):
+    """DIRECT or ASSERTED for one Kyverno ClusterPolicy file."""
+    doc = yaml.safe_load(open(policy_path))
+    refs = []
+    for rule in (doc.get("spec", {}).get("rules") or []):
+        v = rule.get("validate") or {}
+        for key in ("pattern", "anyPattern", "deny", "foreach"):
+            if key in v:
+                refs += list(_pattern_paths(v[key]))
+        refs += _jmespath_refs(json.dumps(v))
+    functional = [r for r in refs
+                  if not any(r == p or r.startswith(p)
+                             for p in NON_FUNCTIONAL_PREFIXES)]
+    return ("DIRECT" if functional else "ASSERTED"), sorted(set(refs))
+
+
+def derive_gatekeeper_class(template_path):
+    """DIRECT or ASSERTED for one Gatekeeper ConstraintTemplate file."""
+    doc = yaml.safe_load(open(template_path))
+    rego = doc["spec"]["targets"][0].get("rego", "")
+    # Strip comments and message strings so prose does not count as a reference.
+    body = "\n".join(l.split("#")[0] for l in rego.splitlines())
+    body = re.sub(r'"(?:[^"\\]|\\.)*"', '""', body)
+    # Only count real object-path references. Matching bare identifiers such as
+    # `pod_spec` or `containers` would count the boilerplate helper that every
+    # template defines, whether or not the violation rule uses it.
+    refs = re.findall(r"input\.review\.object\.([A-Za-z0-9_.\[\]]+)", body)
+    # `object.get(input.review.object.metadata, "annotations", {})` puts the
+    # field name in the second argument rather than the path, so the path above
+    # reads as bare `metadata`; that is still metadata and stays non-functional.
+    refs += re.findall(r"pod_spec\[_\]\.([A-Za-z0-9_.\[\]]+)", body)
+    refs += re.findall(r"\bpod\.([A-Za-z0-9_.\[\]]+)", body)
+    refs += re.findall(r"\bcontainer\.([A-Za-z0-9_.\[\]]+)", body)
+    functional = [r for r in refs
+                  if not any(r == p or r.startswith(p)
+                             for p in NON_FUNCTIONAL_PREFIXES)]
+    return ("DIRECT" if functional else "ASSERTED"), sorted(set(refs))
+
+
+def _find_policy(directory, name):
+    if not name or not os.path.isdir(directory):
+        return None
+    for fn in sorted(os.listdir(directory)):
+        if not fn.endswith((".yaml", ".yml")):
+            continue
+        try:
+            doc = yaml.safe_load(open(os.path.join(directory, fn)))
+        except Exception:
+            continue
+        if not isinstance(doc, dict):
+            continue
+        if (doc.get("metadata") or {}).get("name") == name:
+            return os.path.join(directory, fn)
+    return None
+
+
 def classify(req_id, kyverno_policy, gatekeeper_policy, tier):
     """Return (kyverno_state, gatekeeper_state, note)."""
-    k_state = "ABSENT" if not (kyverno_policy or "").strip() else "DIRECT"
-    g_state = "ABSENT" if not (gatekeeper_policy or "").strip() else "DIRECT"
-
     note = ""
+    k_state = "ABSENT"
+    g_state = "ABSENT"
+
+    kp = _find_policy("policies/kyverno", (kyverno_policy or "").strip())
+    if kp:
+        k_state, _ = derive_kyverno_class(kp)
+    gt = _find_policy("policies/gatekeeper/templates",
+                      (gatekeeper_policy or "").strip())
+    if gt:
+        g_state, _ = derive_gatekeeper_class(gt)
+
     if req_id in ASSERTION_PROXIED:
-        if k_state == "DIRECT":
-            k_state = "ASSERTED"
-        if g_state == "DIRECT":
-            g_state = "ASSERTED"
         note = ASSERTION_PROXIED[req_id]
 
     if req_id in NATIVE_GAP:

@@ -33,7 +33,7 @@ Three of the four things measured came out **identical** between the two tools.
 | What was measured | Kyverno | OPA Gatekeeper | Verdict |
 |---|---|---|---|
 | Requirements expressible at all | 83.3% (25 of 30) | 83.3% (25 of 30) | Tied |
-| Requirements genuinely enforced | 56.7% (17 of 30) | 56.7% (17 of 30) | Tied |
+| Requirements genuinely enforced | 43.3% (13 of 30) | 43.3% (13 of 30) | Tied |
 | Detection accuracy (precision, recall, F1) | 1.000 | 1.000 | Tied |
 | Extra time added to admission | about 14.5 ms | about 9.4 ms | No meaningful difference |
 
@@ -44,9 +44,11 @@ The headline conclusion is therefore **not** the one the proposal expected. Choo
 This is the most important number in the project, so it is worth slowing down.
 
 - **Binary coverage (83.3%)** answers "can the tool express this rule at all?"
-- **Effective coverage (56.7%)** answers "does the rule actually inspect the real thing?"
+- **Effective coverage (43.3%)** answers "does the rule actually inspect the real thing?"
 
-The 26.7 point gap between them is the finding. Eight of the requirements can only be checked by reading a **label that the user themselves wrote**, claiming they are compliant.
+The line between the two is drawn by a single rule, applied by a script rather than by hand: a policy counts as direct when it inspects a field that governs how the workload actually runs, and as asserted when it inspects only metadata that a person typed in. Both engines are classified independently from their own source, and they come out identical.
+
+The 40 point gap between them is the finding. Twelve of the requirements, close to half, can only be checked by reading a **label that the user themselves wrote**, claiming they are compliant.
 
 The clearest example is image signing. The policy checks for a label saying `dora.io/image-signature-verified: "true"`. But anyone can type that label onto an unsigned image. The policy checks that a claim was made. It does not check that the claim is true.
 
@@ -111,8 +113,8 @@ Each requirement is sorted into one of four groups:
 
 | Group | Count | Meaning |
 |---|---|---|
-| Fully automatable | 12 | A policy can check the real setting |
-| Partially automatable | 13 | A policy can check that something was declared, but not that it is true |
+| Fully automatable | 11 | A policy can check the real setting |
+| Partially automatable | 14 | A policy can check that something was declared, but not that it is true |
 | Not automatable | 4 | This is a human process, such as risk assessment or crisis communication |
 | Not implemented | 1 | Honestly recorded as a gap, not quietly dropped |
 
