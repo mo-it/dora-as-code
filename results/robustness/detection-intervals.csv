@@ -1,0 +1,4 @@
+measure,basis,successes,trials,point_estimate,ci95_lower,ci95_upper
+Specificity,compliant manifests admitted,21,21,1.0,0.839,1.0
+Recall,Enforce-mode violations denied,20,20,1.0,0.832,1.0
+Overall accuracy,correct decisions,41,41,1.0,0.914,1.0

@@ -1,0 +1,13 @@
+metric,scope,n_blocks,friedman_p,comparison,median_diff_ms,p_holm,significant,cliffs_delta,magnitude
+admission_ms,full,12,0.0131,Baseline vs Kyverno,-12.2,0.0483,True,-0.528,large
+admission_ms,full,12,0.0131,Baseline vs OPA Gatekeeper,-15.5,0.5137,False,-0.5,large
+admission_ms,full,12,0.0131,Kyverno vs OPA Gatekeeper,-3.0,0.6221,False,-0.049,negligible
+admission_ms,reduced,11,0.0056,Baseline vs Kyverno,-11.0,0.0967,False,-0.62,large
+admission_ms,reduced,11,0.0056,Baseline vs OPA Gatekeeper,-15.5,0.1289,False,-0.636,large
+admission_ms,reduced,11,0.0056,Kyverno vs OPA Gatekeeper,-3.5,0.2783,False,-0.157,small
+argocd_sync_ms,full,12,0.0183,Baseline vs Kyverno,-11.8,0.4805,False,-0.111,negligible
+argocd_sync_ms,full,12,0.0183,Baseline vs OPA Gatekeeper,-96.5,0.1274,False,-0.708,large
+argocd_sync_ms,full,12,0.0183,Kyverno vs OPA Gatekeeper,-87.8,0.1274,False,-0.708,large
+argocd_sync_ms,reduced,11,0.0039,Baseline vs Kyverno,5.0,0.7793,False,-0.124,negligible
+argocd_sync_ms,reduced,11,0.0039,Baseline vs OPA Gatekeeper,-99.5,0.0059,True,-0.851,large
+argocd_sync_ms,reduced,11,0.0039,Kyverno vs OPA Gatekeeper,-98.5,0.0059,True,-0.851,large
