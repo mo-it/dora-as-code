@@ -1,0 +1,31 @@
+req_id,cited,requirement,domain,verdict,severity,reason,suggestion
+REQ-012,Art. 5(2)(a),Maintain ICT asset inventory,asset-management,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 8(4) scores 6.,Consider Art. 8(4).
+REQ-025,Art. 5(2)(d),Maintain documentation of ICT systems,documentation,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 8(1) scores 2.,Consider Art. 8(1).
+REQ-013,Art. 6(1)(b),Identify and classify ICT assets by criticality,asset-management,UNVERIFIED,INFO,"Article 6 text is not yet in the corpus, so this citation could not be checked.",
+REQ-027,Art. 6(2),Map ICT asset dependencies and interconnections,asset-management,UNVERIFIED,INFO,"Article 6 text is not yet in the corpus, so this citation could not be checked.",
+REQ-016,Art. 7(1),Establish ICT risk assessment process,risk-management,MALFORMED,ERROR,"Article 7 has no numbered paragraphs, only lettered points, so '(1)' cannot exist.","Valid subdivisions: (a), (b), (c), (d)"
+REQ-017,Art. 8(1),Identify and document all ICT assets supporting business functions,asset-management,REVIEW,WARN,Cited provision scores 5 on subject terms; Art. 8(4) scores 6.,Consider Art. 8(4).
+REQ-001,Art. 9(2),Ensure confidentiality of data at rest,encryption,OK,OK,"Article, subdivision and subject all consistent (score 4).",
+REQ-002,Art. 9(2),Ensure integrity and confidentiality of data in transit,encryption,OK,OK,"Article, subdivision and subject all consistent (score 4).",
+REQ-009,Art. 9(2),Ensure data integrity through immutable container images,integrity,OK,OK,"Article, subdivision and subject all consistent (score 4).",
+REQ-008,Art. 9(3)(a),Implement network segmentation controls,network-security,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 9(4(b)) scores 4.,Consider Art. 9(4(b)).
+REQ-028,Art. 9(3)(b),Implement logical segregation of ICT assets,resource-isolation,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 9(4(b)) scores 4.,Consider Art. 9(4(b)).
+REQ-010,Art. 9(4)(a),Restrict container runtime privileges - non-root execution,access-control,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 9(4(c)) scores 3.,Consider Art. 9(4(c)).
+REQ-011,Art. 9(4)(a),Prevent container breakout - host isolation,access-control,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 9(4(c)) scores 3.,Consider Art. 9(4(c)).
+REQ-018,Art. 9(4)(a),Enforce security hardening on container filesystems,access-control,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 9(4(c)) scores 3.,Consider Art. 9(4(c)).
+REQ-003,Art. 9(4)(b),Implement least-privilege access controls,access-control,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 9(4(c)) scores 3.,Consider Art. 9(4(c)).
+REQ-004,Art. 9(4)(b),Prevent privilege escalation through RBAC bindings,access-control,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 9(4(c)) scores 3.,Consider Art. 9(4(c)).
+REQ-026,Art. 9(4)(c),Implement authentication and session management controls,access-control,OK,OK,"Article, subdivision and subject all consistent (score 3).",
+REQ-019,Art. 9(4)(c),Restrict access to ICT resources to authorised service accounts only,access-control,OK,OK,"Article, subdivision and subject all consistent (score 3).",
+REQ-023,Art. 9(4)(d),Implement cryptographic key management controls,encryption,REVIEW,WARN,Cited provision scores 2 on subject terms; Art. 9(2) scores 4.,Consider Art. 9(2).
+REQ-005,Art. 10(1),Enable kernel-level security auditing on containers,detection,OK,OK,"Article, subdivision and subject all consistent (score 2).",
+REQ-020,Art. 10(3),Implement application-level log collection and forwarding,logging,OK,OK,"Article, subdivision and subject all consistent (score 3).",
+REQ-006,Art. 11(1),Ensure ICT system resilience through resource governance,resilience,REVIEW,WARN,Cited provision scores 1 on subject terms; Art. 11(5) scores 3.,Consider Art. 11(5).
+REQ-007,Art. 11(1),Ensure high availability of critical ICT services,resilience,REVIEW,WARN,Cited provision scores 1 on subject terms; Art. 11(5) scores 3.,Consider Art. 11(5).
+REQ-024,Art. 11(5),Implement graceful degradation capabilities,resilience,OK,OK,"Article, subdivision and subject all consistent (score 3).",
+REQ-021,Art. 11(3),Test ICT resilience through scenario-based testing,resilience,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 11(5) scores 3.,Consider Art. 11(5).
+REQ-014,Art. 12(1),Establish backup and restoration procedures,resilience,UNVERIFIED,INFO,"Article 12 text is not yet in the corpus, so this citation could not be checked.",
+REQ-015,Art. 13(1),Implement ICT change management processes,change-management,REVIEW,WARN,Cited provision scores 0 on subject terms; Art. 9(4(e)) scores 2.,Consider Art. 9(4(e)).
+REQ-029,Art. 14(1),Establish crisis communication plans and designate a communication lead for ICT-related incidents,communication,OK,OK,"Article, subdivision and subject all consistent (score 2).",
+REQ-022,Art. 15(1),Verify container image provenance and integrity,supply-chain,INVALID,ERROR,"Article 15 (Further harmonisation of ICT risk management tools, methods, processes and policies) mandates the ESAs to develop regulatory technical standards. It imposes no obligation on financial entities, so it cannot be the legal basis for a technical control.",Re-cite to the substantive article this control implements.
+REQ-023b,Art. 15(1),Restrict container images to pre-approved registries,supply-chain,INVALID,ERROR,"Article 15 (Further harmonisation of ICT risk management tools, methods, processes and policies) mandates the ESAs to develop regulatory technical standards. It imposes no obligation on financial entities, so it cannot be the legal basis for a technical control.",Re-cite to the substantive article this control implements.
