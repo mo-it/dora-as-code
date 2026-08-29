@@ -1,6 +1,6 @@
 # DORA citation audit
 
-Register rows checked: 33. Corpus: `dora-articles.json` (https://www.digital-operational-resilience-act.com/DORA_Articles.html).
+Register rows checked: 29. Corpus: `dora-articles.json` (https://www.digital-operational-resilience-act.com/DORA_Articles.html).
 
 Checks 1 to 3 (article exists, article binds financial entities, subdivision exists) are questions of fact about the regulation's structure and are decisive. Check 4 (subject match) is advisory: term overlap is a heuristic, and legal interpretation is a matter for the author, not a score.
 
@@ -8,8 +8,8 @@ Checks 1 to 3 (article exists, article binds financial entities, subdivision exi
 |---|---|
 | ERROR | 0 |
 | WARN | 7 |
-| INFO | 4 |
-| OK | 22 |
+| INFO | 1 |
+| OK | 21 |
 
 ## Review: subject may fit another provision better
 
@@ -27,10 +27,7 @@ Checks 1 to 3 (article exists, article binds financial entities, subdivision exi
 
 | REQ | Cited | Requirement | Finding | Suggestion |
 |---|---|---|---|---|
-| REQ-030 | Art. 5(2) | Management body defines, approves, oversees  | Article and subdivision valid; no subject vocabulary defined for this domain, so subject not scored. | - |
-| REQ-031 | Art. 6(5) | Document and review the ICT risk management  | Article and subdivision valid; no subject vocabulary defined for this domain, so subject not scored. | - |
 | REQ-016 | Art. 8(2) | Establish ICT risk assessment process | Article and subdivision valid; no subject vocabulary defined for this domain, so subject not scored. | - |
-| REQ-032 | Art. 13(2) | Conduct post-incident reviews and incorporat | Article and subdivision valid; no subject vocabulary defined for this domain, so subject not scored. | - |
 
 ## Verified
 
@@ -55,6 +52,5 @@ Checks 1 to 3 (article exists, article binds financial entities, subdivision exi
 | REQ-024 | Art. 11(5) | Implement graceful degradation capabilities | Article, subdivision and subject all consistent (score 3). | - |
 | REQ-021 | Art. 11(6)(a) | Test ICT resilience through scenario-based t | Article, subdivision and subject all consistent (score 3). | - |
 | REQ-015 | Art. 9(4)(e) | Implement ICT change management processes | Article, subdivision and subject all consistent (score 2). | - |
-| REQ-029 | Art. 14(1) | Establish crisis communication plans and des | Article, subdivision and subject all consistent (score 2). | - |
 | REQ-022 | Art. 9(3)(c) | Verify container image provenance and integr | Article, subdivision and subject all consistent (score 4). | - |
 | REQ-023b | Art. 9(3)(c) | Restrict container images to pre-approved re | Article, subdivision and subject all consistent (score 4). | - |

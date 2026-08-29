@@ -299,6 +299,16 @@ def main():
     seen = collections.Counter(
         int(re.search(r"(\d+)", r["dora_article"]).group(1)) for r in reg)
     corpus2 = json.load(open(args.corpus))
+    # Articles that yield no requirement enforceable at admission. The register
+    # decomposes each article into its technical requirements; where an article
+    # yields none, that is recorded here and in the thesis scope section rather
+    # than as a register row, so the register holds technical requirements only.
+    NO_TECHNICAL_REQUIREMENT = {
+        5:  "binds the management body, not the systems",
+        6:  "governs the risk management framework document",
+        13: "governs learning and post-incident review",
+        14: "governs crisis communication and staffing",
+    }
     gaps = []
     for a in range(5, 16):
         if seen.get(a):
@@ -306,6 +316,9 @@ def main():
         if (corpus2.get(str(a)) or {}).get("addressee") == "ESA":
             print(f"Article {a}: no requirement, correct "
                   f"(binds the ESAs, not financial entities).")
+        elif a in NO_TECHNICAL_REQUIREMENT:
+            print(f"Article {a}: no requirement, correct "
+                  f"({NO_TECHNICAL_REQUIREMENT[a]}).")
         else:
             gaps.append(a)
     if gaps:

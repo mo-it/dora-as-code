@@ -1,6 +1,4 @@
 req_id,dora_article,requirement,domain,kyverno,gatekeeper,note
-REQ-030,5(2),"Management body defines, approves, oversees and is responsible for ICT",governance,ABSENT,ABSENT,classified not-automatable in the requirements register
-REQ-031,6(5),Document and review the ICT risk management framework at least annuall,governance,ABSENT,ABSENT,classified not-automatable in the requirements register
 REQ-012,8(6),Maintain ICT asset inventory,asset-management,ASSERTED,ASSERTED,
 REQ-025,8(1),Maintain documentation of ICT systems,documentation,ASSERTED,ASSERTED,
 REQ-013,8(1),Identify and classify ICT assets by criticality,asset-management,ASSERTED,ASSERTED,
@@ -28,7 +26,5 @@ REQ-024,11(5),Implement graceful degradation capabilities,resilience,ASSERTED,AS
 REQ-021,11(6(a)),Test ICT resilience through scenario-based testing,resilience,ABSENT,ABSENT,classified not-automatable in the requirements register
 REQ-014,12(1),Establish backup and restoration procedures,resilience,ABSENT,ABSENT,classified not-automatable in the requirements register
 REQ-015,9(4(e)),Implement ICT change management processes,change-management,ASSERTED,ASSERTED,checks change-management annotations; cannot verify a change ticket exists or was approved
-REQ-032,13(2),Conduct post-incident reviews and incorporate lessons into the risk ma,governance,ABSENT,ABSENT,classified not-automatable in the requirements register
-REQ-029,14(1)-(3),Establish crisis communication plans and designate a communication lea,communication,ABSENT,ABSENT,classified not-automatable in the requirements register
 REQ-022,9(3(c)),Verify container image provenance and integrity,supply-chain,ASSERTED,ASSERTED,checks dora.io/image-signature-verified annotation; no cryptographic verification performed | Kyverno: native verifyImages rule type supports Cosign and Notary signature verification. Gatekeeper: no equivalent; requires an external data provider via the externaldata API.
 REQ-023b,9(3(c)),Restrict container images to pre-approved registries,supply-chain,DIRECT,DIRECT,

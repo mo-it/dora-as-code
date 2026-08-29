@@ -1,13 +1,13 @@
 # Policy Expressiveness Coverage Matrix
 
 
-Requirements assessed: **33**
+Requirements assessed: **29**
 
 
 | Coverage measure | Kyverno | OPA Gatekeeper |
 |---|---|---|
-| Binary coverage (expressible at all) | 75.8% | 75.8% |
-| Effective coverage (directly enforced) | 39.4% | 39.4% |
+| Binary coverage (expressible at all) | 86.2% | 86.2% |
+| Effective coverage (directly enforced) | 44.8% | 44.8% |
 
 **DIRECT** — the policy inspects the actual resource field the requirement
 concerns; enforcement is technical. **ASSERTED** — the policy checks an
@@ -19,8 +19,6 @@ enforcement is procedural. **ABSENT** — no working policy.
 
 | REQ | Article | Requirement | Kyverno | Gatekeeper |
 |---|---|---|---|---|
-| REQ-030 | 5(2) | Management body defines, approves, oversees and is responsible for ICT | ABSENT | ABSENT |
-| REQ-031 | 6(5) | Document and review the ICT risk management framework at least annuall | ABSENT | ABSENT |
 | REQ-012 | 8(6) | Maintain ICT asset inventory | ASSERTED | ASSERTED |
 | REQ-025 | 8(1) | Maintain documentation of ICT systems | ASSERTED | ASSERTED |
 | REQ-013 | 8(1) | Identify and classify ICT assets by criticality | ASSERTED | ASSERTED |
@@ -48,15 +46,11 @@ enforcement is procedural. **ABSENT** — no working policy.
 | REQ-021 | 11(6(a)) | Test ICT resilience through scenario-based testing | ABSENT | ABSENT |
 | REQ-014 | 12(1) | Establish backup and restoration procedures | ABSENT | ABSENT |
 | REQ-015 | 9(4(e)) | Implement ICT change management processes | ASSERTED | ASSERTED |
-| REQ-032 | 13(2) | Conduct post-incident reviews and incorporate lessons into the risk ma | ABSENT | ABSENT |
-| REQ-029 | 14(1)-(3) | Establish crisis communication plans and designate a communication lea | ABSENT | ABSENT |
 | REQ-022 | 9(3(c)) | Verify container image provenance and integrity | ASSERTED | ASSERTED |
 | REQ-023b | 9(3(c)) | Restrict container images to pre-approved registries | DIRECT | DIRECT |
 
 ## Notes on non-direct enforcement
 
-- **REQ-030** — classified not-automatable in the requirements register
-- **REQ-031** — classified not-automatable in the requirements register
 - **REQ-027** — checks dora.io/dependencies annotation; contents are unvalidated free text
 - **REQ-016** — classified not-automatable in the requirements register
 - **REQ-017** — checks asset-metadata annotations; values are unvalidated free text
@@ -67,6 +61,4 @@ enforcement is procedural. **ABSENT** — no working policy.
 - **REQ-021** — classified not-automatable in the requirements register
 - **REQ-014** — classified not-automatable in the requirements register
 - **REQ-015** — checks change-management annotations; cannot verify a change ticket exists or was approved
-- **REQ-032** — classified not-automatable in the requirements register
-- **REQ-029** — classified not-automatable in the requirements register
 - **REQ-022** — checks dora.io/image-signature-verified annotation; no cryptographic verification performed | Kyverno: native verifyImages rule type supports Cosign and Notary signature verification. Gatekeeper: no equivalent; requires an external data provider via the externaldata API.
