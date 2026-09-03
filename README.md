@@ -9,7 +9,7 @@ Supervisor: Mark Lynch
 
 ---
 
-## What this project is, in plain English
+## What this project is ?
 
 The EU has a financial regulation called **DORA** (the Digital Operational Resilience Act, Regulation (EU) 2022/2554). It has been law since January 2025. It tells banks and their technology suppliers things like "you must control who has access to systems" and "you must keep data confidential". It is written as legal text, not as computer instructions.
 
@@ -302,4 +302,4 @@ explicit licence default copyright law would forbid exactly that.
 
 If you refer to this work, please cite the dissertation:
 
-Somashekar, M. K. (2026) *DORA-as-Code: A Comparative Evaluation of Policy-as-Code Tools for Automated EU Regulatory Compliance in GitOps-Managed Kubernetes Environments*. MSc thesis. Technological University Dublin.
+Mohit Kumar S (2026) *DORA-as-Code: A Comparative Evaluation of Policy-as-Code Tools for Automated EU Regulatory Compliance in GitOps-Managed Kubernetes Environments*. MSc thesis. Technological University Dublin.
